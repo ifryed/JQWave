@@ -12,4 +12,6 @@ data class NotificationRule(
     val minute: Int = 0,
     /** Minutes after sunrise or before/after sunset when anchor is sun-based (negative = before). */
     val offsetMinutes: Int = 0,
+    /** For Shabbat alerts: candle lighting (START) vs havdalah (END). */
+    val shabbatSegment: ShabbatSegment? = null,
 )

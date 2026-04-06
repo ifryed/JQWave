@@ -13,4 +13,8 @@ enum class TimeAnchor {
 
     @SerialName("SUNSET")
     SUNSET,
+
+    /** Nightfall (~7.083°), used for havdalah / motza’ei Shabbat. */
+    @SerialName("TZAIT")
+    TZAIT,
 }

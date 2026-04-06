@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.jqwave.JQWaveApplication
 import com.jqwave.data.EventKind
+import com.jqwave.data.toNotificationRules
 import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
@@ -18,7 +19,16 @@ class AlarmReceiver : BroadcastReceiver() {
         app.applicationScope.launch {
             try {
                 val loc = app.locationPreferences.currentLocation()
-                NotificationHelper.showEventNotification(context, kind, loc)
+                val entity = app.database.eventConfigDao().getByKind(kind.storageKey)
+                val rule = entity?.let { e ->
+                    runCatching { e.rulesJson.toNotificationRules() }.getOrNull()
+                        ?.find { it.id == ruleId }
+                }
+                if (rule != null) {
+                    NotificationHelper.showForRule(context, kind, rule, loc)
+                } else {
+                    NotificationHelper.showEventNotification(context, kind, loc)
+                }
                 app.eventNotificationScheduler.rescheduleAfterAlarm(kind, ruleId)
             } finally {
                 pendingResult.finish()

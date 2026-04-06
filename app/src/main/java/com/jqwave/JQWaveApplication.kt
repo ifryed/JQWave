@@ -2,6 +2,7 @@ package com.jqwave
 
 import android.app.Application
 import com.jqwave.data.AppDatabase
+import com.jqwave.data.DefaultEventRules
 import com.jqwave.data.EventConfigEntity
 import com.jqwave.data.EventKind
 import com.jqwave.data.LocationPreferences
@@ -49,13 +50,17 @@ class JQWaveApplication : Application() {
     private suspend fun seedIfEmpty() {
         val dao = database.eventConfigDao()
         if (dao.getAll().isNotEmpty()) return
-        val defaultRule = NotificationRule()
         for (kind in EventKind.entries) {
+            val rules = if (kind == EventKind.SHABBAT) {
+                DefaultEventRules.shabbatRules
+            } else {
+                listOf(NotificationRule())
+            }
             dao.upsert(
                 EventConfigEntity(
                     kind = kind.storageKey,
                     enabled = false,
-                    rulesJson = listOf(defaultRule).toJson(),
+                    rulesJson = rules.toJson(),
                 ),
             )
         }

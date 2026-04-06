@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import com.jqwave.R
 import com.jqwave.data.EventKind
 import com.jqwave.data.NotificationRule
+import com.jqwave.data.ShabbatSegment
 import com.jqwave.data.TimeAnchor
 import com.jqwave.data.UserLocation
 
@@ -121,7 +122,7 @@ private fun EventCard(
     onTestNotification: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
-    var expanded by remember(row.kind) { mutableStateOf(true) }
+    var expanded by remember(row.kind) { mutableStateOf(false) }
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -164,6 +165,7 @@ private fun EventCard(
                 Spacer(Modifier.height(12.dp))
                 row.rules.forEach { rule ->
                     RuleRow(
+                        eventKind = row.kind,
                         rule = rule,
                         showRemove = row.rules.size > 1,
                         onRuleChange = { updated ->
@@ -178,7 +180,31 @@ private fun EventCard(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     IconButton(
                         onClick = {
-                            onRulesChange(row.rules + NotificationRule())
+                            val newRule = if (row.kind == EventKind.SHABBAT) {
+                                when {
+                                    row.rules.none { it.shabbatSegment == ShabbatSegment.START } ->
+                                        NotificationRule(
+                                            shabbatSegment = ShabbatSegment.START,
+                                            anchor = TimeAnchor.SUNSET,
+                                            offsetMinutes = -18,
+                                        )
+                                    row.rules.none { it.shabbatSegment == ShabbatSegment.END } ->
+                                        NotificationRule(
+                                            shabbatSegment = ShabbatSegment.END,
+                                            anchor = TimeAnchor.TZAIT,
+                                            offsetMinutes = 0,
+                                        )
+                                    else ->
+                                        NotificationRule(
+                                            shabbatSegment = ShabbatSegment.START,
+                                            anchor = TimeAnchor.SUNSET,
+                                            offsetMinutes = -18,
+                                        )
+                                }
+                            } else {
+                                NotificationRule()
+                            }
+                            onRulesChange(row.rules + newRule)
                         },
                     ) {
                         Icon(
@@ -195,6 +221,7 @@ private fun EventCard(
 
 @Composable
 private fun RuleRow(
+    eventKind: EventKind,
     rule: NotificationRule,
     showRemove: Boolean,
     onRuleChange: (NotificationRule) -> Unit,
@@ -207,6 +234,33 @@ private fun RuleRow(
         selectedContainerColor = scheme.primaryContainer,
         selectedLabelColor = scheme.onPrimaryContainer,
     )
+    val segment = rule.shabbatSegment ?: ShabbatSegment.START
+    fun applySegment(newSeg: ShabbatSegment) {
+        var r = rule.copy(shabbatSegment = newSeg)
+        when (newSeg) {
+            ShabbatSegment.END -> {
+                if (r.anchor != TimeAnchor.TZAIT && r.anchor != TimeAnchor.CLOCK) {
+                    r = r.copy(anchor = TimeAnchor.TZAIT, offsetMinutes = 0)
+                }
+            }
+            ShabbatSegment.START -> {
+                if (r.anchor == TimeAnchor.TZAIT) {
+                    r = r.copy(anchor = TimeAnchor.SUNSET, offsetMinutes = -18)
+                }
+            }
+        }
+        onRuleChange(r)
+    }
+    val anchors = buildList {
+        if (eventKind == EventKind.SHABBAT && segment == ShabbatSegment.END) {
+            add(TimeAnchor.TZAIT to stringResource(R.string.anchor_tzait_chip))
+            add(TimeAnchor.CLOCK to stringResource(R.string.anchor_clock_chip))
+        } else {
+            add(TimeAnchor.CLOCK to stringResource(R.string.anchor_clock_chip))
+            add(TimeAnchor.SUNRISE to stringResource(R.string.anchor_sunrise_chip))
+            add(TimeAnchor.SUNSET to stringResource(R.string.anchor_sunset_chip))
+        }
+    }
     Card(
         colors = CardDefaults.cardColors(
             containerColor = scheme.surfaceContainerHigh,
@@ -214,16 +268,59 @@ private fun RuleRow(
         ),
     ) {
         Column(Modifier.padding(12.dp)) {
+            if (eventKind == EventKind.SHABBAT) {
+                Text(
+                    stringResource(R.string.shabbat_segment_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = scheme.onSurface,
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FilterChip(
+                        selected = segment == ShabbatSegment.START,
+                        onClick = { applySegment(ShabbatSegment.START) },
+                        label = {
+                            Text(
+                                stringResource(R.string.shabbat_segment_start),
+                                maxLines = 1,
+                                color = if (segment == ShabbatSegment.START) {
+                                    scheme.onPrimaryContainer
+                                } else {
+                                    scheme.onSurface
+                                },
+                            )
+                        },
+                        colors = anchorChipColors,
+                    )
+                    FilterChip(
+                        selected = segment == ShabbatSegment.END,
+                        onClick = { applySegment(ShabbatSegment.END) },
+                        label = {
+                            Text(
+                                stringResource(R.string.shabbat_segment_end),
+                                maxLines = 1,
+                                color = if (segment == ShabbatSegment.END) {
+                                    scheme.onPrimaryContainer
+                                } else {
+                                    scheme.onSurface
+                                },
+                            )
+                        },
+                        colors = anchorChipColors,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                val anchors = listOf(
-                    TimeAnchor.CLOCK to stringResource(R.string.anchor_clock_chip),
-                    TimeAnchor.SUNRISE to stringResource(R.string.anchor_sunrise_chip),
-                    TimeAnchor.SUNSET to stringResource(R.string.anchor_sunset_chip),
-                )
                 Column(Modifier.weight(1f)) {
                     Text(
                         stringResource(R.string.anchor_when_label),
@@ -270,7 +367,7 @@ private fun RuleRow(
                 }
             }
             Spacer(Modifier.height(8.dp))
-            key(rule.id, rule.anchor) {
+            key(rule.id, rule.anchor, rule.shabbatSegment) {
                 when (rule.anchor) {
                     TimeAnchor.CLOCK -> {
                         Column(
@@ -292,7 +389,7 @@ private fun RuleRow(
                             )
                         }
                     }
-                    TimeAnchor.SUNRISE, TimeAnchor.SUNSET -> {
+                    TimeAnchor.SUNRISE, TimeAnchor.SUNSET, TimeAnchor.TZAIT -> {
                         RelativeOffsetPickers(
                             offsetMinutes = rule.offsetMinutes,
                             onOffsetChange = { onRuleChange(rule.copy(offsetMinutes = it)) },
@@ -314,7 +411,7 @@ private fun LocationCard(
     onInIsraelChange: (Boolean) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
-    var expanded by remember { mutableStateOf(true) }
+    var expanded by remember { mutableStateOf(false) }
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = scheme.onSurface,
         unfocusedTextColor = scheme.onSurface,

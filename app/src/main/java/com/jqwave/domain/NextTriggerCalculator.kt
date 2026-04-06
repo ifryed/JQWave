@@ -2,11 +2,13 @@ package com.jqwave.domain
 
 import com.jqwave.data.EventKind
 import com.jqwave.data.NotificationRule
+import com.jqwave.data.ShabbatSegment
 import com.jqwave.data.TimeAnchor
 import com.jqwave.data.UserLocation
 import com.kosherjava.zmanim.ComplexZmanimCalendar
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import com.kosherjava.zmanim.util.GeoLocation
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -77,18 +79,24 @@ object NextTriggerCalculator {
                 val base = zcal.sunset ?: return null
                 base.time + rule.offsetMinutes * 60_000L
             }
+            TimeAnchor.TZAIT -> {
+                val base = zcal.tzait7083 ?: return null
+                base.time + rule.offsetMinutes * 60_000L
+            }
         }
 
-        if (!eventAppliesAtTrigger(kind, jc, day, triggerMillis, zcal)) return null
+        if (!eventAppliesAtTrigger(kind, rule, jc, day, triggerMillis, zcal, zone)) return null
         return triggerMillis
     }
 
     private fun eventAppliesAtTrigger(
         kind: EventKind,
+        rule: NotificationRule,
         templateJc: JewishCalendar,
         day: LocalDate,
         triggerMillis: Long,
         zcal: ComplexZmanimCalendar,
+        zone: ZoneId,
     ): Boolean = when (kind) {
         EventKind.SFIRAT_HAOMER -> {
             JewishEventEvaluator.isOmerDayAtTrigger(
@@ -102,6 +110,17 @@ object NextTriggerCalculator {
             JewishEventEvaluator.setGregorianFromLocalDate(templateJc, day)
             JewishEventEvaluator.applies(kind, templateJc)
         }
+        EventKind.SHABBAT -> {
+            val seg = rule.shabbatSegment ?: return false
+            val dow = Instant.ofEpochMilli(triggerMillis).atZone(zone).dayOfWeek
+            when (seg) {
+                ShabbatSegment.START ->
+                    dow == DayOfWeek.FRIDAY && rule.anchor != TimeAnchor.TZAIT
+                ShabbatSegment.END ->
+                    dow == DayOfWeek.SATURDAY &&
+                        (rule.anchor == TimeAnchor.TZAIT || rule.anchor == TimeAnchor.CLOCK)
+            }
+        }
     }
 
     private val ComplexZmanimCalendar.sunrise: Date?
@@ -109,4 +128,7 @@ object NextTriggerCalculator {
 
     private val ComplexZmanimCalendar.sunset: Date?
         get() = getSunset()
+
+    private val ComplexZmanimCalendar.tzait7083: Date?
+        get() = getTzaisGeonim7Point083Degrees()
 }

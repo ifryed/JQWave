@@ -5,7 +5,7 @@
     <string name="notify_body_rosh_hodesh">Today is Rosh Chodesh.</string>
     <string name="notify_body_omer">Time to count the Omer.</string>
     <string name="notify_body_omer_day">Today is day %1$d of the Omer.</string>
-    <string name="screen_title">Jewish events</string>
+    <string name="screen_title">Jewish Quite Wave App</string>
     <string name="location_section">Location &amp; calendar</string>
     <string name="latitude">Latitude</string>
     <string name="longitude">Longitude</string>
@@ -25,4 +25,17 @@
     <string name="event_card_minimize">Minimize card</string>
     <string name="event_card_expand">Expand card</string>
     <string name="button_test">Test</string>
+    <string name="notification_action_share">Share</string>
+    <string name="share_chooser_title">Share via</string>
+    <string name="notify_title_shabbat_start">כניסת שבת</string>
+    <string name="notify_title_shabbat_end">יציאת שבת</string>
+    <string name="notify_shabbat_start">Shabbat starts at %1$s</string>
+    <string name="notify_shabbat_end">Shabbat ends at %1$s</string>
+    <string name="notify_shabbat_generic">Shabbat times</string>
+    <string name="notify_shabbat_at">Shabbat: %1$s</string>
+    <string name="notify_shabbat_test_both">(Test) Shabbat starts ~%1$s · ends ~%2$s</string>
+    <string name="anchor_tzait_chip">Nightfall</string>
+    <string name="shabbat_segment_label">Reminder</string>
+    <string name="shabbat_segment_start">Start (candles)</string>
+    <string name="shabbat_segment_end">End (havdalah)</string>
 </resources>

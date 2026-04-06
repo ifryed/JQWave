@@ -10,6 +10,7 @@ object JewishEventEvaluator {
     fun applies(kind: EventKind, jc: JewishCalendar): Boolean = when (kind) {
         EventKind.ROSH_HODESH -> jc.isRoshChodesh
         EventKind.SFIRAT_HAOMER -> jc.getDayOfOmer() >= 1
+        EventKind.SHABBAT -> false
     }
 
     /**

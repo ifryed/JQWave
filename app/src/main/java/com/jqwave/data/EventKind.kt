@@ -11,4 +11,9 @@ enum class EventKind(val storageKey: String, val displayName: String, val notifi
         "Sfirat HaOmer",
         "Sfirat HaOmer — count the Omer"
     ),
+    SHABBAT(
+        "SHABBAT",
+        "כניסת שבת",
+        "כניסת שבת"
+    ),
 }

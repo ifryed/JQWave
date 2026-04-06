@@ -30,6 +30,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".notifications.ShareNotificationReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".notifications.BootReceiver"
             android:exported="true">
             <intent-filter>
