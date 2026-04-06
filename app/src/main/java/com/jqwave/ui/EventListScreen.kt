@@ -16,8 +16,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -25,12 +28,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.jqwave.R
@@ -45,6 +52,11 @@ import com.jqwave.data.EventKind
 import com.jqwave.data.NotificationRule
 import com.jqwave.data.TimeAnchor
 import com.jqwave.data.UserLocation
+
+private val EventCardLightGreen = Color(0xFFF2FAF6)
+
+@Composable
+private fun eventCardContainerColor(): Color = EventCardLightGreen
 
 @Composable
 fun EventListScreen(
@@ -54,14 +66,24 @@ fun EventListScreen(
     onRulesChange: (EventKind, List<NotificationRule>) -> Unit,
     onLocationChange: (Double, Double, String) -> Unit,
     onInIsraelChange: (Boolean) -> Unit,
+    onTestEventNotification: (EventKind) -> Unit,
 ) {
+    val scheme = MaterialTheme.colorScheme
     Scaffold(
+        containerColor = scheme.background,
+        contentColor = scheme.onBackground,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.screen_title)) },
+                title = {
+                    Text(
+                        stringResource(R.string.screen_title),
+                        color = scheme.onPrimaryContainer,
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = scheme.primaryContainer,
+                    titleContentColor = scheme.onPrimaryContainer,
+                    actionIconContentColor = scheme.onPrimaryContainer,
                 ),
             )
         },
@@ -79,6 +101,7 @@ fun EventListScreen(
                     row = row,
                     onEnabledChange = { onEnabledChange(row.kind, it) },
                     onRulesChange = { onRulesChange(row.kind, it) },
+                    onTestNotification = { onTestEventNotification(row.kind) },
                 )
             }
             LocationCard(
@@ -95,10 +118,17 @@ private fun EventCard(
     row: EventUiState,
     onEnabledChange: (Boolean) -> Unit,
     onRulesChange: (List<NotificationRule>) -> Unit,
+    onTestNotification: () -> Unit,
 ) {
+    val scheme = MaterialTheme.colorScheme
+    var expanded by remember(row.kind) { mutableStateOf(true) }
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = eventCardContainerColor(),
+            contentColor = scheme.onSurface,
+        ),
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(
@@ -106,10 +136,31 @@ private fun EventCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(row.kind.displayName, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    row.kind.displayName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = scheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = stringResource(
+                            if (expanded) R.string.event_card_minimize else R.string.event_card_expand,
+                        ),
+                        tint = scheme.onSurface,
+                    )
+                }
                 Switch(checked = row.enabled, onCheckedChange = onEnabledChange)
             }
-            if (row.enabled) {
+            if (expanded) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onTestNotification) {
+                        Text(stringResource(R.string.button_test))
+                    }
+                }
+            }
+            if (expanded && row.enabled) {
                 Spacer(Modifier.height(12.dp))
                 row.rules.forEach { rule ->
                     RuleRow(
@@ -130,7 +181,11 @@ private fun EventCard(
                             onRulesChange(row.rules + NotificationRule())
                         },
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            tint = scheme.onSurface,
+                        )
                     }
                 }
             }
@@ -145,8 +200,18 @@ private fun RuleRow(
     onRuleChange: (NotificationRule) -> Unit,
     onRemove: () -> Unit,
 ) {
+    val scheme = MaterialTheme.colorScheme
+    val anchorChipColors = FilterChipDefaults.filterChipColors(
+        containerColor = scheme.surface,
+        labelColor = scheme.onSurface,
+        selectedContainerColor = scheme.primaryContainer,
+        selectedLabelColor = scheme.onPrimaryContainer,
+    )
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.cardColors(
+            containerColor = scheme.surfaceContainerHigh,
+            contentColor = scheme.onSurface,
+        ),
     ) {
         Column(Modifier.padding(12.dp)) {
             Row(
@@ -163,7 +228,7 @@ private fun RuleRow(
                     Text(
                         stringResource(R.string.anchor_when_label),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = scheme.onSurface,
                     )
                     Row(
                         Modifier
@@ -173,10 +238,22 @@ private fun RuleRow(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         anchors.forEach { (anchor, label) ->
+                            val selected = rule.anchor == anchor
                             FilterChip(
-                                selected = rule.anchor == anchor,
+                                selected = selected,
                                 onClick = { onRuleChange(rule.copy(anchor = anchor)) },
-                                label = { Text(label, maxLines = 1) },
+                                label = {
+                                    Text(
+                                        label,
+                                        maxLines = 1,
+                                        color = if (selected) {
+                                            scheme.onPrimaryContainer
+                                        } else {
+                                            scheme.onSurface
+                                        },
+                                    )
+                                },
+                                colors = anchorChipColors,
                             )
                         }
                     }
@@ -184,46 +261,44 @@ private fun RuleRow(
                 Spacer(Modifier.width(4.dp))
                 if (showRemove) {
                     IconButton(onClick = onRemove) {
-                        Icon(Icons.Default.Remove, contentDescription = null)
+                        Icon(
+                            Icons.Default.Remove,
+                            contentDescription = null,
+                            tint = scheme.onSurface,
+                        )
                     }
                 }
             }
             Spacer(Modifier.height(8.dp))
-            when (rule.anchor) {
-                TimeAnchor.CLOCK -> {
-                    Text(
-                        stringResource(R.string.local_time_label),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    HourMinuteWheelRow(
-                        hour = rule.hour,
-                        minute = rule.minute,
-                        onHourChange = { onRuleChange(rule.copy(hour = it)) },
-                        onMinuteChange = { onRuleChange(rule.copy(minute = it)) },
-                    )
-                }
-                TimeAnchor.SUNRISE, TimeAnchor.SUNSET -> {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Column(Modifier.weight(1f)) {
+            key(rule.id, rule.anchor) {
+                when (rule.anchor) {
+                    TimeAnchor.CLOCK -> {
+                        Column(
+                            Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
                             Text(
-                                stringResource(R.string.offset_minutes),
-                                style = MaterialTheme.typography.labelMedium,
+                                stringResource(R.string.local_time_label),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = scheme.onSurface,
                             )
-                            Text(
-                                stringResource(R.string.offset_minutes_hint),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            Spacer(Modifier.height(4.dp))
+                            HourMinuteWheelRow(
+                                hour = rule.hour,
+                                minute = rule.minute,
+                                onHourChange = { onRuleChange(rule.copy(hour = it)) },
+                                onMinuteChange = { onRuleChange(rule.copy(minute = it)) },
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
-                        OffsetMinuteWheelPicker(
+                    }
+                    TimeAnchor.SUNRISE, TimeAnchor.SUNSET -> {
+                        RelativeOffsetPickers(
                             offsetMinutes = rule.offsetMinutes,
                             onOffsetChange = { onRuleChange(rule.copy(offsetMinutes = it)) },
+                            beforeText = stringResource(R.string.offset_before),
+                            afterText = stringResource(R.string.offset_after),
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
@@ -238,6 +313,19 @@ private fun LocationCard(
     onLocationChange: (Double, Double, String) -> Unit,
     onInIsraelChange: (Boolean) -> Unit,
 ) {
+    val scheme = MaterialTheme.colorScheme
+    var expanded by remember { mutableStateOf(true) }
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = scheme.onSurface,
+        unfocusedTextColor = scheme.onSurface,
+        focusedLabelColor = scheme.onSurface,
+        unfocusedLabelColor = scheme.onSurface,
+        focusedContainerColor = scheme.surface,
+        unfocusedContainerColor = scheme.surface,
+        cursorColor = scheme.primary,
+        focusedBorderColor = scheme.primary,
+        unfocusedBorderColor = scheme.outline,
+    )
     var latText by remember { mutableStateOf(location.latitude.toString()) }
     var lonText by remember { mutableStateOf(location.longitude.toString()) }
     var tzText by remember { mutableStateOf(location.timeZoneId) }
@@ -250,54 +338,101 @@ private fun LocationCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = scheme.surfaceContainerLow,
+            contentColor = scheme.onSurface,
+        ),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.location_section), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(R.string.location_auto_refresh),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            OutlinedTextField(
-                value = latText,
-                onValueChange = { latText = it },
-                label = { Text(stringResource(R.string.latitude)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = lonText,
-                onValueChange = { lonText = it },
-                label = { Text(stringResource(R.string.longitude)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = tzText,
-                onValueChange = { tzText = it },
-                label = { Text(stringResource(R.string.time_zone_id)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(stringResource(R.string.in_israel_calendar))
-                Switch(checked = location.inIsrael, onCheckedChange = onInIsraelChange)
+                Text(
+                    stringResource(R.string.location_section),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = scheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = stringResource(
+                            if (expanded) R.string.event_card_minimize else R.string.event_card_expand,
+                        ),
+                        tint = scheme.onSurface,
+                    )
+                }
             }
-            Button(
-                onClick = {
-                    val lat = latText.toDoubleOrNull() ?: return@Button
-                    val lon = lonText.toDoubleOrNull() ?: return@Button
-                    if (tzText.isNotBlank()) {
-                        onLocationChange(lat, lon, tzText.trim())
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.apply_location))
+            if (expanded) {
+                Text(
+                    stringResource(R.string.location_auto_refresh),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurface,
+                )
+                OutlinedTextField(
+                    value = latText,
+                    onValueChange = { latText = it },
+                    label = {
+                        Text(
+                            stringResource(R.string.latitude),
+                            color = scheme.onSurface,
+                        )
+                    },
+                    singleLine = true,
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = lonText,
+                    onValueChange = { lonText = it },
+                    label = {
+                        Text(
+                            stringResource(R.string.longitude),
+                            color = scheme.onSurface,
+                        )
+                    },
+                    singleLine = true,
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = tzText,
+                    onValueChange = { tzText = it },
+                    label = {
+                        Text(
+                            stringResource(R.string.time_zone_id),
+                            color = scheme.onSurface,
+                        )
+                    },
+                    singleLine = true,
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        stringResource(R.string.in_israel_calendar),
+                        color = scheme.onSurface,
+                    )
+                    Switch(checked = location.inIsrael, onCheckedChange = onInIsraelChange)
+                }
+                Button(
+                    onClick = {
+                        val lat = latText.toDoubleOrNull() ?: return@Button
+                        val lon = lonText.toDoubleOrNull() ?: return@Button
+                        if (tzText.isNotBlank()) {
+                            onLocationChange(lat, lon, tzText.trim())
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.apply_location))
+                }
             }
         }
     }

@@ -13,6 +13,7 @@ import com.jqwave.data.NotificationRule
 import com.jqwave.data.UserLocation
 import com.jqwave.data.toJson
 import com.jqwave.data.toNotificationRules
+import com.jqwave.notifications.NotificationHelper
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -88,6 +89,12 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
             locationPreferences.setInIsrael(value)
             scheduler.rescheduleAll()
         }
+    }
+
+    fun testEventNotification(kind: EventKind) {
+        val ctx = getApplication<Application>()
+        NotificationHelper.ensureChannel(ctx)
+        NotificationHelper.showEventNotification(ctx, kind, location.value)
     }
 }
 

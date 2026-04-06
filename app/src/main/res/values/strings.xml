@@ -16,10 +16,13 @@
     <string name="anchor_sunrise_chip">Sunrise</string>
     <string name="anchor_sunset_chip">Sunset</string>
     <string name="local_time_label">Local time (24h)</string>
-    <string name="offset_minutes">Offset (minutes)</string>
-    <string name="offset_minutes_hint">Scroll to set. Negative = before, positive = after.</string>
+    <string name="offset_before">Before</string>
+    <string name="offset_after">After</string>
     <string name="hour">Hour</string>
     <string name="minute">Minute</string>
     <string name="apply_location">Apply location</string>
     <string name="location_auto_refresh">Location is refreshed automatically about every 24 hours when location access is allowed. Time zone follows your device.</string>
+    <string name="event_card_minimize">Minimize card</string>
+    <string name="event_card_expand">Expand card</string>
+    <string name="button_test">Test</string>
 </resources>

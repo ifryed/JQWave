@@ -9,9 +9,13 @@ import androidx.core.app.NotificationManagerCompat
 import com.jqwave.R
 import com.jqwave.data.EventKind
 import com.jqwave.data.UserLocation
-import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
+import com.jqwave.domain.JewishEventEvaluator
+import com.kosherjava.zmanim.ComplexZmanimCalendar
+import com.kosherjava.zmanim.util.GeoLocation
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Calendar
+import java.util.TimeZone
 
 object NotificationHelper {
 
@@ -35,14 +39,32 @@ object NotificationHelper {
     ) {
         val zone = runCatching { ZoneId.of(location.timeZoneId) }.getOrNull() ?: ZoneId.systemDefault()
         val today = LocalDate.now(zone)
-        val jc = JewishCalendar().apply {
-            setInIsrael(location.inIsrael)
-            setGregorianDate(today.year, today.monthValue, today.dayOfMonth)
-        }
+        val nowMillis = System.currentTimeMillis()
         val text = when (kind) {
             EventKind.ROSH_HODESH -> context.getString(R.string.notify_body_rosh_hodesh)
             EventKind.SFIRAT_HAOMER -> {
-                val d = jc.getDayOfOmer()
+                val geo = GeoLocation(
+                    "user",
+                    location.latitude,
+                    location.longitude,
+                    0.0,
+                    TimeZone.getTimeZone(location.timeZoneId),
+                )
+                val zcal = ComplexZmanimCalendar(geo)
+                val cal = zcal.getCalendar()
+                cal.set(Calendar.YEAR, today.year)
+                cal.set(Calendar.MONTH, today.monthValue - 1)
+                cal.set(Calendar.DAY_OF_MONTH, today.dayOfMonth)
+                cal.set(Calendar.HOUR_OF_DAY, 12)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                val d = JewishEventEvaluator.dayOfOmerAtTrigger(
+                    location.inIsrael,
+                    today,
+                    nowMillis,
+                    zcal.getSunset()?.time,
+                )
                 if (d >= 1) {
                     context.getString(R.string.notify_body_omer_day, d)
                 } else {

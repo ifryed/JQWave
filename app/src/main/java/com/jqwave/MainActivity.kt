@@ -1,7 +1,9 @@
 package com.jqwave
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -21,6 +23,12 @@ import com.jqwave.ui.EventsViewModelFactory
 import com.jqwave.ui.theme.JQWaveTheme
 
 class MainActivity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        val cfg = Configuration(newBase.resources.configuration)
+        cfg.uiMode = (cfg.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_NO
+        super.attachBaseContext(newBase.createConfigurationContext(cfg))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,6 +75,7 @@ class MainActivity : ComponentActivity() {
                     onRulesChange = vm::saveRules,
                     onLocationChange = vm::updateLocation,
                     onInIsraelChange = vm::setInIsrael,
+                    onTestEventNotification = vm::testEventNotification,
                 )
             }
         }

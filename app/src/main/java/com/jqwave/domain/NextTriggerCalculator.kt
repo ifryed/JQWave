@@ -54,9 +54,6 @@ object NextTriggerCalculator {
         kind: EventKind,
         zone: ZoneId,
     ): Long? {
-        jc.setGregorianDate(day.year, day.monthValue, day.dayOfMonth)
-        if (!JewishEventEvaluator.applies(kind, jc)) return null
-
         val cal = zcal.getCalendar()
         cal.set(Calendar.YEAR, day.year)
         cal.set(Calendar.MONTH, day.monthValue - 1)
@@ -66,7 +63,7 @@ object NextTriggerCalculator {
         cal.set(Calendar.SECOND, 0)
         cal.set(Calendar.MILLISECOND, 0)
 
-        return when (rule.anchor) {
+        val triggerMillis = when (rule.anchor) {
             TimeAnchor.CLOCK -> {
                 ZonedDateTime.of(day, LocalTime.of(rule.hour, rule.minute), zone)
                     .toInstant()
@@ -80,6 +77,30 @@ object NextTriggerCalculator {
                 val base = zcal.sunset ?: return null
                 base.time + rule.offsetMinutes * 60_000L
             }
+        }
+
+        if (!eventAppliesAtTrigger(kind, jc, day, triggerMillis, zcal)) return null
+        return triggerMillis
+    }
+
+    private fun eventAppliesAtTrigger(
+        kind: EventKind,
+        templateJc: JewishCalendar,
+        day: LocalDate,
+        triggerMillis: Long,
+        zcal: ComplexZmanimCalendar,
+    ): Boolean = when (kind) {
+        EventKind.SFIRAT_HAOMER -> {
+            JewishEventEvaluator.isOmerDayAtTrigger(
+                templateJc.getInIsrael(),
+                day,
+                triggerMillis,
+                zcal.sunset?.time,
+            )
+        }
+        EventKind.ROSH_HODESH -> {
+            JewishEventEvaluator.setGregorianFromLocalDate(templateJc, day)
+            JewishEventEvaluator.applies(kind, templateJc)
         }
     }
 
