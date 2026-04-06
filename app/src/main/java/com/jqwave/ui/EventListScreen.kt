@@ -2,6 +2,7 @@
 
 package com.jqwave.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,9 +42,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -142,6 +145,9 @@ private fun EventCard(
 ) {
     val scheme = MaterialTheme.colorScheme
     var expanded by remember(row.kind) { mutableStateOf(false) }
+    val expandCollapseLabel = stringResource(
+        if (expanded) R.string.event_card_minimize else R.string.event_card_expand,
+    )
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -156,18 +162,26 @@ private fun EventCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(
-                    stringResource(row.kind.displayNameRes),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = scheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(onClick = { expanded = !expanded }) {
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .clickable(
+                            onClickLabel = expandCollapseLabel,
+                            role = Role.Button,
+                            onClick = { expanded = !expanded },
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        stringResource(row.kind.displayNameRes),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = scheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
                     Icon(
                         imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = stringResource(
-                            if (expanded) R.string.event_card_minimize else R.string.event_card_expand,
-                        ),
+                        contentDescription = null,
                         tint = scheme.onSurface,
                     )
                 }
@@ -247,6 +261,7 @@ private fun RuleRow(
     onRemove: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val latestRule by rememberUpdatedState(rule)
     val anchorChipColors = FilterChipDefaults.filterChipColors(
         containerColor = scheme.surface,
         labelColor = scheme.onSurface,
@@ -402,8 +417,8 @@ private fun RuleRow(
                             HourMinuteWheelRow(
                                 hour = rule.hour,
                                 minute = rule.minute,
-                                onHourChange = { onRuleChange(rule.copy(hour = it)) },
-                                onMinuteChange = { onRuleChange(rule.copy(minute = it)) },
+                                onHourChange = { onRuleChange(latestRule.copy(hour = it)) },
+                                onMinuteChange = { onRuleChange(latestRule.copy(minute = it)) },
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }
@@ -411,7 +426,7 @@ private fun RuleRow(
                     TimeAnchor.SUNRISE, TimeAnchor.SUNSET, TimeAnchor.TZAIT -> {
                         RelativeOffsetPickers(
                             offsetMinutes = rule.offsetMinutes,
-                            onOffsetChange = { onRuleChange(rule.copy(offsetMinutes = it)) },
+                            onOffsetChange = { onRuleChange(latestRule.copy(offsetMinutes = it)) },
                             beforeText = stringResource(R.string.offset_before),
                             afterText = stringResource(R.string.offset_after),
                             modifier = Modifier.fillMaxWidth(),
@@ -431,6 +446,9 @@ private fun LocationCard(
 ) {
     val scheme = MaterialTheme.colorScheme
     var expanded by remember { mutableStateOf(false) }
+    val expandCollapseLabel = stringResource(
+        if (expanded) R.string.event_card_minimize else R.string.event_card_expand,
+    )
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = scheme.onSurface,
         unfocusedTextColor = scheme.onSurface,
@@ -461,7 +479,13 @@ private fun LocationCard(
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        onClickLabel = expandCollapseLabel,
+                        role = Role.Button,
+                        onClick = { expanded = !expanded },
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -471,15 +495,11 @@ private fun LocationCard(
                     color = scheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = { expanded = !expanded }) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = stringResource(
-                            if (expanded) R.string.event_card_minimize else R.string.event_card_expand,
-                        ),
-                        tint = scheme.onSurface,
-                    )
-                }
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = scheme.onSurface,
+                )
             }
             if (expanded) {
                 Text(

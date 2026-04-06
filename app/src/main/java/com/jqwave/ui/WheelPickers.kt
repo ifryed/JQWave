@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
@@ -40,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import java.util.Locale
 import kotlin.math.abs
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter as flowFilter
 
 private val ClockPickerLightBg = Color(0xFFD8F0EC)
 
@@ -70,6 +70,7 @@ private fun ZeroPaddedTimeWheel(
     val density = LocalDensity.current
     val itemPx = remember(density) { with(density) { ClockWheelItemHeight.roundToPx() } }
     val latestValue = rememberUpdatedState(value)
+    val latestOnValueChange = rememberUpdatedState(onValueChange)
 
     LaunchedEffect(value, count) {
         val idx = (value - range.first).coerceIn(0, count - 1)
@@ -78,19 +79,28 @@ private fun ZeroPaddedTimeWheel(
         }
     }
 
-    LaunchedEffect(listState, range.first, range.last) {
-        var skipInitialIdle = true
-        snapshotFlow { listState.isScrollInProgress }
+    LaunchedEffect(listState, range.first, range.last, itemPx, count) {
+        var sawScrollProgress = false
+        snapshotFlow {
+            Triple(
+                listState.isScrollInProgress,
+                listState.firstVisibleItemIndex,
+                listState.firstVisibleItemScrollOffset,
+            )
+        }
             .distinctUntilChanged()
-            .flowFilter { !it }
-            .collect {
-                if (skipInitialIdle) {
-                    skipInitialIdle = false
+            .collect { (inProgress, _, _) ->
+                if (inProgress) {
+                    sawScrollProgress = true
                     return@collect
                 }
-                val idx = listState.centerItemIndex() ?: return@collect
+                if (!sawScrollProgress) return@collect
+                val idx = listState.snappedItemIndex(count, itemPx) ?: return@collect
+                sawScrollProgress = false
                 val newVal = (range.first + idx).coerceIn(range.first, range.last)
-                if (newVal != latestValue.value) onValueChange(newVal)
+                if (newVal != latestValue.value) {
+                    latestOnValueChange.value(newVal)
+                }
             }
     }
 
@@ -142,14 +152,11 @@ private fun ZeroPaddedTimeWheel(
     }
 }
 
-private fun LazyListState.centerItemIndex(): Int? {
-    val info = layoutInfo
-    if (info.visibleItemsInfo.isEmpty()) return null
-    val viewportCenter = (info.viewportStartOffset + info.viewportEndOffset) / 2
-    return info.visibleItemsInfo.minByOrNull { item ->
-        val itemCenter = item.offset + item.size / 2
-        abs(itemCenter - viewportCenter)
-    }?.index
+/** Index of the snapped row; null while flinging or between snap positions (avoids bogus picks on sibling layout). */
+private fun LazyListState.snappedItemIndex(count: Int, itemPx: Int): Int? {
+    if (isScrollInProgress) return null
+    if (abs(firstVisibleItemScrollOffset) > itemPx / 3) return null
+    return firstVisibleItemIndex.coerceIn(0, count - 1)
 }
 
 @Composable
@@ -161,36 +168,42 @@ fun HourMinuteWheelRow(
     modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-    ) {
-        ZeroPaddedTimeWheel(
-            value = hour,
-            range = 0..23,
-            onValueChange = onHourChange,
-            textColor = scheme.onSurface,
-            backgroundColor = ClockPickerLightBg,
-        )
-        Box(
-            modifier = Modifier.height(ClockWheelVisibleHeight),
-            contentAlignment = Alignment.Center,
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(
+            modifier = modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         ) {
-            Text(
-                ":",
-                style = MaterialTheme.typography.headlineSmall,
-                color = scheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
+            key("clock-hour-wheel") {
+                ZeroPaddedTimeWheel(
+                    value = hour,
+                    range = 0..23,
+                    onValueChange = onHourChange,
+                    textColor = scheme.onSurface,
+                    backgroundColor = ClockPickerLightBg,
+                )
+            }
+            Box(
+                modifier = Modifier.height(ClockWheelVisibleHeight),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    ":",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = scheme.onSurface,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            key("clock-minute-wheel") {
+                ZeroPaddedTimeWheel(
+                    value = minute,
+                    range = 0..59,
+                    onValueChange = onMinuteChange,
+                    textColor = scheme.onSurface,
+                    backgroundColor = ClockPickerLightBg,
+                )
+            }
         }
-        ZeroPaddedTimeWheel(
-            value = minute,
-            range = 0..59,
-            onValueChange = onMinuteChange,
-            textColor = scheme.onSurface,
-            backgroundColor = ClockPickerLightBg,
-        )
     }
 }
 
@@ -207,6 +220,7 @@ fun RelativeOffsetPickers(
     val h = magnitude / 60
     val m = magnitude % 60
     val scheme = MaterialTheme.colorScheme
+    val canToggleSign = magnitude > 0
 
     fun commit(hour: Int, minute: Int) {
         val total = (hour * 60 + minute).coerceIn(0, OFFSET_MAX_MINUTES)
@@ -231,43 +245,52 @@ fun RelativeOffsetPickers(
                         onOffsetChange(-t)
                     }
                 },
+                enabled = canToggleSign,
                 modifier = Modifier.widthIn(min = 108.dp),
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = scheme.secondaryContainer,
                     contentColor = scheme.onSecondaryContainer,
+                    disabledContainerColor = scheme.secondaryContainer.copy(alpha = 0.38f),
+                    disabledContentColor = scheme.onSecondaryContainer.copy(alpha = 0.38f),
                 ),
             ) {
                 Text(if (isBefore) beforeText else afterText)
             }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ZeroPaddedTimeWheel(
-                    value = h,
-                    range = 0..10,
-                    onValueChange = { nh -> commit(nh, m) },
-                    textColor = scheme.onSurface,
-                    backgroundColor = ClockPickerLightBg,
-                )
-                Box(
-                    modifier = Modifier.height(ClockWheelVisibleHeight),
-                    contentAlignment = Alignment.Center,
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        ":",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = scheme.onSurface,
-                        textAlign = TextAlign.Center,
-                    )
+                    key("offset-hour-wheel") {
+                        ZeroPaddedTimeWheel(
+                            value = h,
+                            range = 0..10,
+                            onValueChange = { nh -> commit(nh, m) },
+                            textColor = scheme.onSurface,
+                            backgroundColor = ClockPickerLightBg,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier.height(ClockWheelVisibleHeight),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            ":",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = scheme.onSurface,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    key("offset-minute-wheel") {
+                        ZeroPaddedTimeWheel(
+                            value = m,
+                            range = 0..59,
+                            onValueChange = { nm -> commit(h, nm) },
+                            textColor = scheme.onSurface,
+                            backgroundColor = ClockPickerLightBg,
+                        )
+                    }
                 }
-                ZeroPaddedTimeWheel(
-                    value = m,
-                    range = 0..59,
-                    onValueChange = { nm -> commit(h, nm) },
-                    textColor = scheme.onSurface,
-                    backgroundColor = ClockPickerLightBg,
-                )
             }
         }
     }
