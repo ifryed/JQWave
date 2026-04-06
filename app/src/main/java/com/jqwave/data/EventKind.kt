@@ -1,19 +1,26 @@
 package com.jqwave.data
 
-enum class EventKind(val storageKey: String, val displayName: String, val notificationTitle: String) {
+import androidx.annotation.StringRes
+import com.jqwave.R
+
+enum class EventKind(
+    val storageKey: String,
+    @StringRes val displayNameRes: Int,
+    @StringRes val notificationTitleRes: Int,
+) {
     ROSH_HODESH(
         "ROSH_HODESH",
-        "Rosh Chodesh",
-        "Rosh Chodesh today"
+        R.string.event_name_rosh_hodesh,
+        R.string.notify_title_rosh_hodesh,
     ),
     SFIRAT_HAOMER(
         "SFIRAT_HAOMER",
-        "Sfirat HaOmer",
-        "Sfirat HaOmer — count the Omer"
+        R.string.event_name_sfirat_haomer,
+        R.string.notify_title_sfirat_haomer,
     ),
     SHABBAT(
         "SHABBAT",
-        "כניסת שבת",
-        "כניסת שבת"
+        R.string.event_name_shabbat,
+        R.string.notify_title_shabbat_card,
     ),
 }

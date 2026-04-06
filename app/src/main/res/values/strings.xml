@@ -2,6 +2,12 @@
 <resources>
     <string name="app_name">JQWave</string>
     <string name="notification_channel_name">Jewish calendar events</string>
+    <string name="event_name_rosh_hodesh">Rosh Chodesh</string>
+    <string name="event_name_sfirat_haomer">Sfirat HaOmer</string>
+    <string name="event_name_shabbat">Shabbat (candles &amp; havdalah)</string>
+    <string name="notify_title_rosh_hodesh">Rosh Chodesh today</string>
+    <string name="notify_title_sfirat_haomer">Sfirat HaOmer</string>
+    <string name="notify_title_shabbat_card">Shabbat</string>
     <string name="notify_body_rosh_hodesh">Today is Rosh Chodesh.</string>
     <string name="notify_body_omer">Time to count the Omer.</string>
     <string name="notify_body_omer_day">Today is day %1$d of the Omer.</string>
@@ -27,8 +33,8 @@
     <string name="button_test">Test</string>
     <string name="notification_action_share">Share</string>
     <string name="share_chooser_title">Share via</string>
-    <string name="notify_title_shabbat_start">כניסת שבת</string>
-    <string name="notify_title_shabbat_end">יציאת שבת</string>
+    <string name="notify_title_shabbat_start">Shabbat begins</string>
+    <string name="notify_title_shabbat_end">Shabbat ends</string>
     <string name="notify_shabbat_start">Shabbat starts at %1$s</string>
     <string name="notify_shabbat_end">Shabbat ends at %1$s</string>
     <string name="notify_shabbat_generic">Shabbat times</string>

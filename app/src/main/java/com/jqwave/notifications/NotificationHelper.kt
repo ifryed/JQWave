@@ -71,7 +71,7 @@ object NotificationHelper {
                 context.getString(R.string.notify_title_shabbat_end)
             kind == EventKind.SHABBAT && rule?.shabbatSegment == ShabbatSegment.START ->
                 context.getString(R.string.notify_title_shabbat_start)
-            else -> kind.notificationTitle
+            else -> context.getString(kind.notificationTitleRes)
         }
         val body = when (kind) {
             EventKind.ROSH_HODESH -> context.getString(R.string.notify_body_rosh_hodesh)

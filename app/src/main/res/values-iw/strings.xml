@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">JQWave</string>
+    <string name="notification_channel_name">אירועי לוח עברי</string>
+    <string name="event_name_rosh_hodesh">ראש חודש</string>
+    <string name="event_name_sfirat_haomer">ספירת העומר</string>
+    <string name="event_name_shabbat">כניסת שבת</string>
+    <string name="notify_title_rosh_hodesh">ראש חודש היום</string>
+    <string name="notify_title_sfirat_haomer">ספירת העומר</string>
+    <string name="notify_title_shabbat_card">שבת</string>
+    <string name="notify_body_rosh_hodesh">היום ראש חודש.</string>
+    <string name="notify_body_omer">זמן לספור את העומר.</string>
+    <string name="notify_body_omer_day">היום יום %1$d לעומר.</string>
+    <string name="screen_title">אירועים יהודיים</string>
+    <string name="location_section">מיקום ולוח שנה</string>
+    <string name="latitude">קו רוחב</string>
+    <string name="longitude">קו אורך</string>
+    <string name="time_zone_id">אזור זמן</string>
+    <string name="in_israel_calendar">כללי חגים כמו בישראל</string>
+    <string name="anchor_when_label">מתי</string>
+    <string name="anchor_clock_chip">שעון</string>
+    <string name="anchor_sunrise_chip">זריחה</string>
+    <string name="anchor_sunset_chip">שקיעה</string>
+    <string name="local_time_label">שעה מקומית (24 שעות)</string>
+    <string name="offset_before">לפני</string>
+    <string name="offset_after">אחרי</string>
+    <string name="hour">שעה</string>
+    <string name="minute">דקה</string>
+    <string name="apply_location">החל מיקום</string>
+    <string name="location_auto_refresh">המיקום מתעדכן בערך כל 24 שעות כשיש הרשאת מיקום. אזור הזמן לפי המכשיר.</string>
+    <string name="event_card_minimize">מזעור כרטיס</string>
+    <string name="event_card_expand">הרחבת כרטיס</string>
+    <string name="button_test">בדיקה</string>
+    <string name="notification_action_share">שיתוף</string>
+    <string name="share_chooser_title">שתף דרך</string>
+    <string name="notify_title_shabbat_start">כניסת שבת</string>
+    <string name="notify_title_shabbat_end">יציאת שבת</string>
+    <string name="notify_shabbat_start">כניסת שבת בשעה %1$s</string>
+    <string name="notify_shabbat_end">יציאת שבת בשעה %1$s</string>
+    <string name="notify_shabbat_generic">זמני שבת</string>
+    <string name="notify_shabbat_at">שבת: %1$s</string>
+    <string name="notify_shabbat_test_both">(בדיקה) כניסת שבת ~%1$s · יציאת שבת ~%2$s</string>
+    <string name="anchor_tzait_chip">צאת הכוכבים</string>
+    <string name="shabbat_segment_label">תזכורת</string>
+    <string name="shabbat_segment_start">כניסה (נרות)</string>
+    <string name="shabbat_segment_end">יציאה (הבדלה)</string>
+</resources>

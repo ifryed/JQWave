@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.jqwave.R
@@ -60,6 +61,14 @@ private val EventCardLightGreen = Color(0xFFF2FAF6)
 private fun eventCardContainerColor(): Color = EventCardLightGreen
 
 @Composable
+private fun languageToggleLabel(): String {
+    val locales = LocalConfiguration.current.locales
+    val lang = if (locales.size() == 0) "" else locales[0].language
+    val isHebrew = lang == "iw" || lang == "he"
+    return if (isHebrew) "En" else "ע"
+}
+
+@Composable
 fun EventListScreen(
     rows: List<EventUiState>,
     location: UserLocation,
@@ -68,8 +77,10 @@ fun EventListScreen(
     onLocationChange: (Double, Double, String) -> Unit,
     onInIsraelChange: (Boolean) -> Unit,
     onTestEventNotification: (EventKind) -> Unit,
+    onLanguageToggle: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val langLabel = languageToggleLabel()
     Scaffold(
         containerColor = scheme.background,
         contentColor = scheme.onBackground,
@@ -80,6 +91,14 @@ fun EventListScreen(
                         stringResource(R.string.screen_title),
                         color = scheme.onPrimaryContainer,
                     )
+                },
+                actions = {
+                    TextButton(onClick = onLanguageToggle) {
+                        Text(
+                            langLabel,
+                            color = scheme.onPrimaryContainer,
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = scheme.primaryContainer,
@@ -138,7 +157,7 @@ private fun EventCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    row.kind.displayName,
+                    stringResource(row.kind.displayNameRes),
                     style = MaterialTheme.typography.titleMedium,
                     color = scheme.onSurface,
                     modifier = Modifier.weight(1f),

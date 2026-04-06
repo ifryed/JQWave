@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.jqwave.locale.AppLocaleStore
 import com.jqwave.location.LocationRefreshScheduler
 import com.jqwave.ui.EventListScreen
 import com.jqwave.ui.EventsViewModel
@@ -26,6 +27,7 @@ class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
         val cfg = Configuration(newBase.resources.configuration)
+        cfg.setLocale(AppLocaleStore.localeForTag(AppLocaleStore.getTag(newBase)))
         cfg.uiMode = (cfg.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_NO
         super.attachBaseContext(newBase.createConfigurationContext(cfg))
     }
@@ -76,6 +78,15 @@ class MainActivity : ComponentActivity() {
                     onLocationChange = vm::updateLocation,
                     onInIsraelChange = vm::setInIsrael,
                     onTestEventNotification = vm::testEventNotification,
+                    onLanguageToggle = {
+                        val next = if (AppLocaleStore.getTag(this@MainActivity) == AppLocaleStore.LANG_IW) {
+                            AppLocaleStore.LANG_EN
+                        } else {
+                            AppLocaleStore.LANG_IW
+                        }
+                        AppLocaleStore.setTag(this@MainActivity, next)
+                        recreate()
+                    },
                 )
             }
         }
