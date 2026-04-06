@@ -21,6 +21,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -30,7 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 import kotlin.math.abs
@@ -97,33 +102,40 @@ private fun ZeroPaddedTimeWheel(
             .background(backgroundColor),
         contentAlignment = Alignment.Center,
     ) {
-        LazyColumn(
-            state = listState,
-            flingBehavior = flingBehavior,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(ClockWheelVisibleHeight),
-            userScrollEnabled = true,
-        ) {
-            items(
-                count = count,
-                key = { index -> range.first + index },
-            ) { index ->
-                val v = range.first + index
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(ClockWheelItemHeight),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = String.format(Locale.ROOT, "%02d", v),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = textColor,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+        val digitStyle = MaterialTheme.typography.headlineSmall.merge(
+            TextStyle(
+                fontFamily = FontFamily.Monospace,
+                textAlign = TextAlign.Center,
+            ),
+        )
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            LazyColumn(
+                state = listState,
+                flingBehavior = flingBehavior,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(ClockWheelVisibleHeight),
+                userScrollEnabled = true,
+            ) {
+                items(
+                    count = count,
+                    key = { index -> range.first + index },
+                ) { index ->
+                    val v = range.first + index
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(ClockWheelItemHeight),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = String.format(Locale.ROOT, "%02d", v),
+                            style = digitStyle,
+                            color = textColor,
+                            maxLines = 1,
+                        )
+                    }
                 }
             }
         }
