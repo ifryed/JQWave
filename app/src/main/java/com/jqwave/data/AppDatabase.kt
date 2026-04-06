@@ -14,7 +14,7 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                val json = DefaultEventRules.shabbatRulesJson().replace("'", "''")
+                val json = DefaultEventRules.shabbatRules.toJson().replace("'", "''")
                 db.execSQL(
                     "INSERT OR IGNORE INTO event_configs (kind, enabled, rulesJson) VALUES ('SHABBAT', 0, '$json');",
                 )

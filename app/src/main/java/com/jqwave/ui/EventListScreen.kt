@@ -61,9 +61,6 @@ import com.jqwave.data.UserLocation
 private val EventCardLightGreen = Color(0xFFF2FAF6)
 
 @Composable
-private fun eventCardContainerColor(): Color = EventCardLightGreen
-
-@Composable
 private fun languageToggleLabel(): String {
     val locales = LocalConfiguration.current.locales
     val lang = if (locales.size() == 0) "" else locales[0].language
@@ -152,7 +149,7 @@ private fun EventCard(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = eventCardContainerColor(),
+            containerColor = EventCardLightGreen,
             contentColor = scheme.onSurface,
         ),
     ) {

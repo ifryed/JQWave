@@ -42,11 +42,4 @@ object JewishEventEvaluator {
         }
         return jc.getDayOfOmer()
     }
-
-    fun isOmerDayAtTrigger(
-        inIsrael: Boolean,
-        day: LocalDate,
-        triggerMillis: Long,
-        sunsetMillis: Long?,
-    ): Boolean = dayOfOmerAtTrigger(inIsrael, day, triggerMillis, sunsetMillis) >= 1
 }

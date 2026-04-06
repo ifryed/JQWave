@@ -15,6 +15,7 @@ import com.jqwave.data.ShabbatSegment
 import com.jqwave.data.UserLocation
 import com.jqwave.domain.JewishEventEvaluator
 import com.jqwave.domain.ShabbatPreview
+import com.jqwave.domain.sunset
 import com.kosherjava.zmanim.ComplexZmanimCalendar
 import com.kosherjava.zmanim.util.GeoLocation
 import java.time.Instant
@@ -170,7 +171,4 @@ object NotificationHelper {
     }
 
     private fun shareRequestCode(key: String): Int = 500_000 + (key.hashCode() and 0x7FFF_FFFF)
-
-    private val ComplexZmanimCalendar.sunset: java.util.Date?
-        get() = getSunset()
 }

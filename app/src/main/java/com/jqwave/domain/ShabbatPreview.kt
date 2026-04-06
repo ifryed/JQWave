@@ -71,7 +71,4 @@ object ShabbatPreview {
         DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
             .withZone(zone)
             .format(Instant.ofEpochMilli(epochMillis))
-
-    private val ComplexZmanimCalendar.sunset: java.util.Date?
-        get() = getSunset()
 }

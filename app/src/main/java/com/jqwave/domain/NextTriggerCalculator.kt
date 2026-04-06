@@ -15,7 +15,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.Calendar
-import java.util.Date
 import java.util.TimeZone
 
 object NextTriggerCalculator {
@@ -99,12 +98,12 @@ object NextTriggerCalculator {
         zone: ZoneId,
     ): Boolean = when (kind) {
         EventKind.SFIRAT_HAOMER -> {
-            JewishEventEvaluator.isOmerDayAtTrigger(
+            JewishEventEvaluator.dayOfOmerAtTrigger(
                 templateJc.getInIsrael(),
                 day,
                 triggerMillis,
                 zcal.sunset?.time,
-            )
+            ) >= 1
         }
         EventKind.ROSH_HODESH -> {
             JewishEventEvaluator.setGregorianFromLocalDate(templateJc, day)
@@ -122,13 +121,4 @@ object NextTriggerCalculator {
             }
         }
     }
-
-    private val ComplexZmanimCalendar.sunrise: Date?
-        get() = getSunrise()
-
-    private val ComplexZmanimCalendar.sunset: Date?
-        get() = getSunset()
-
-    private val ComplexZmanimCalendar.tzait7083: Date?
-        get() = getTzaisGeonim7Point083Degrees()
 }

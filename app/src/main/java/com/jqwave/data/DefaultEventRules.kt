@@ -26,6 +26,4 @@ object DefaultEventRules {
             shabbatSegment = ShabbatSegment.END,
         ),
     )
-
-    fun shabbatRulesJson(): String = shabbatRules.toJson()
 }

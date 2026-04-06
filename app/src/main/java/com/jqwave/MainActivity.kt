@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
 
                 val notificationPermissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission(),
-                ) { /* optional: explain if denied */ }
+                ) { _: Boolean -> }
 
                 val locationPermissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions(),
