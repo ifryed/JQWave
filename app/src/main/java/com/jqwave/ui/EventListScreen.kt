@@ -17,7 +17,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -49,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.jqwave.R
@@ -59,6 +62,35 @@ import com.jqwave.data.TimeAnchor
 import com.jqwave.data.UserLocation
 
 private val EventCardLightGreen = Color(0xFFF2FAF6)
+
+@Composable
+private fun EventKindCardIcon(
+    kind: EventKind,
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    val desc = stringResource(kind.displayNameRes)
+    when (kind) {
+        EventKind.SHABBAT -> Icon(
+            painter = painterResource(R.drawable.ic_event_shabbat_candles),
+            contentDescription = desc,
+            tint = tint,
+            modifier = modifier,
+        )
+        EventKind.ROSH_HODESH -> Icon(
+            imageVector = Icons.Filled.CalendarMonth,
+            contentDescription = desc,
+            tint = tint,
+            modifier = modifier,
+        )
+        EventKind.SFIRAT_HAOMER -> Icon(
+            imageVector = Icons.Filled.FormatListNumbered,
+            contentDescription = desc,
+            tint = tint,
+            modifier = modifier,
+        )
+    }
+}
 
 @Composable
 private fun languageToggleLabel(): String {
@@ -170,12 +202,22 @@ private fun EventCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(
-                        stringResource(row.kind.displayNameRes),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = scheme.onSurface,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.weight(1f),
-                    )
+                    ) {
+                        EventKindCardIcon(
+                            kind = row.kind,
+                            tint = scheme.primary,
+                            modifier = Modifier.padding(end = 12.dp),
+                        )
+                        Text(
+                            stringResource(row.kind.displayNameRes),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = scheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                     Icon(
                         imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                         contentDescription = null,

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Two Shabbat candles with triangular flames (tinted in Compose) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M7,14L5,8.5L9,8.5ZM5,14.5H9V21.5H5Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M14,13.5L12,7.5L16,7.5ZM12,14H16V21.5H12Z" />
+</vector>
