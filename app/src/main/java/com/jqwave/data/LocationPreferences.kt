@@ -21,6 +21,7 @@ class LocationPreferences(private val context: Context) {
         val longitude = doublePreferencesKey("longitude")
         val timeZoneId = stringPreferencesKey("time_zone_id")
         val inIsrael = booleanPreferencesKey("in_israel")
+        val displayLabel = stringPreferencesKey("location_display_label")
     }
 
     suspend fun currentLocation(): UserLocation = locationFlow.first()
@@ -30,14 +31,16 @@ class LocationPreferences(private val context: Context) {
         val lon = prefs[Keys.longitude] ?: DEFAULT_LON
         val tz = prefs[Keys.timeZoneId] ?: DEFAULT_TZ
         val israel = prefs[Keys.inIsrael] ?: false
-        UserLocation(lat, lon, tz, israel)
+        val label = prefs[Keys.displayLabel] ?: ""
+        UserLocation(lat, lon, tz, israel, label)
     }
 
-    suspend fun update(latitude: Double, longitude: Double, timeZoneId: String) {
+    suspend fun update(latitude: Double, longitude: Double, timeZoneId: String, displayLabel: String) {
         context.locationDataStore.edit { prefs ->
             prefs[Keys.latitude] = latitude
             prefs[Keys.longitude] = longitude
             prefs[Keys.timeZoneId] = timeZoneId
+            prefs[Keys.displayLabel] = displayLabel
         }
     }
 
@@ -57,5 +60,7 @@ data class UserLocation(
     val longitude: Double,
     val timeZoneId: String,
     val inIsrael: Boolean,
+    /** User-facing place name; coordinates are never shown in the UI. */
+    val displayLabel: String = "",
 )
 

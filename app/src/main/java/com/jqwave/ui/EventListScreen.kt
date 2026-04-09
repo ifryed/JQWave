@@ -4,6 +4,7 @@ package com.jqwave.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,16 +23,17 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -40,7 +42,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,7 +60,6 @@ import com.jqwave.data.EventKind
 import com.jqwave.data.NotificationRule
 import com.jqwave.data.ShabbatSegment
 import com.jqwave.data.TimeAnchor
-import com.jqwave.data.UserLocation
 
 private val EventCardLightGreen = Color(0xFFF2FAF6)
 
@@ -103,16 +103,15 @@ private fun languageToggleLabel(): String {
 @Composable
 fun EventListScreen(
     rows: List<EventUiState>,
-    location: UserLocation,
     onEnabledChange: (EventKind, Boolean) -> Unit,
     onRulesChange: (EventKind, List<NotificationRule>) -> Unit,
-    onLocationChange: (Double, Double, String) -> Unit,
-    onInIsraelChange: (Boolean) -> Unit,
     onTestEventNotification: (EventKind) -> Unit,
     onLanguageToggle: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val langLabel = languageToggleLabel()
+    var menuExpanded by remember { mutableStateOf(false) }
     Scaffold(
         containerColor = scheme.background,
         contentColor = scheme.onBackground,
@@ -125,11 +124,40 @@ fun EventListScreen(
                     )
                 },
                 actions = {
-                    TextButton(onClick = onLanguageToggle) {
-                        Text(
-                            langLabel,
-                            color = scheme.onPrimaryContainer,
-                        )
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.menu_more_options),
+                                tint = scheme.onPrimaryContainer,
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.settings_menu_settings)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onOpenSettings()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            R.string.settings_menu_language_format,
+                                            langLabel,
+                                        ),
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onLanguageToggle()
+                                },
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -156,11 +184,6 @@ fun EventListScreen(
                     onTestNotification = { onTestEventNotification(row.kind) },
                 )
             }
-            LocationCard(
-                location = location,
-                onLocationChange = onLocationChange,
-                onInIsraelChange = onInIsraelChange,
-            )
         }
     }
 }
@@ -477,138 +500,3 @@ private fun RuleRow(
     }
 }
 
-@Composable
-private fun LocationCard(
-    location: UserLocation,
-    onLocationChange: (Double, Double, String) -> Unit,
-    onInIsraelChange: (Boolean) -> Unit,
-) {
-    val scheme = MaterialTheme.colorScheme
-    var expanded by remember { mutableStateOf(false) }
-    val expandCollapseLabel = stringResource(
-        if (expanded) R.string.event_card_minimize else R.string.event_card_expand,
-    )
-    val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedTextColor = scheme.onSurface,
-        unfocusedTextColor = scheme.onSurface,
-        focusedLabelColor = scheme.onSurface,
-        unfocusedLabelColor = scheme.onSurface,
-        focusedContainerColor = scheme.surface,
-        unfocusedContainerColor = scheme.surface,
-        cursorColor = scheme.primary,
-        focusedBorderColor = scheme.primary,
-        unfocusedBorderColor = scheme.outline,
-    )
-    var latText by remember { mutableStateOf(location.latitude.toString()) }
-    var lonText by remember { mutableStateOf(location.longitude.toString()) }
-    var tzText by remember { mutableStateOf(location.timeZoneId) }
-    LaunchedEffect(location.latitude, location.longitude, location.timeZoneId) {
-        latText = location.latitude.toString()
-        lonText = location.longitude.toString()
-        tzText = location.timeZoneId
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = scheme.surfaceContainerLow,
-            contentColor = scheme.onSurface,
-        ),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        onClickLabel = expandCollapseLabel,
-                        role = Role.Button,
-                        onClick = { expanded = !expanded },
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    stringResource(R.string.location_section),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = scheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = scheme.onSurface,
-                )
-            }
-            if (expanded) {
-                Text(
-                    stringResource(R.string.location_auto_refresh),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurface,
-                )
-                OutlinedTextField(
-                    value = latText,
-                    onValueChange = { latText = it },
-                    label = {
-                        Text(
-                            stringResource(R.string.latitude),
-                            color = scheme.onSurface,
-                        )
-                    },
-                    singleLine = true,
-                    colors = fieldColors,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = lonText,
-                    onValueChange = { lonText = it },
-                    label = {
-                        Text(
-                            stringResource(R.string.longitude),
-                            color = scheme.onSurface,
-                        )
-                    },
-                    singleLine = true,
-                    colors = fieldColors,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = tzText,
-                    onValueChange = { tzText = it },
-                    label = {
-                        Text(
-                            stringResource(R.string.time_zone_id),
-                            color = scheme.onSurface,
-                        )
-                    },
-                    singleLine = true,
-                    colors = fieldColors,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        stringResource(R.string.in_israel_calendar),
-                        color = scheme.onSurface,
-                    )
-                    Switch(checked = location.inIsrael, onCheckedChange = onInIsraelChange)
-                }
-                Button(
-                    onClick = {
-                        val lat = latText.toDoubleOrNull() ?: return@Button
-                        val lon = lonText.toDoubleOrNull() ?: return@Button
-                        if (tzText.isNotBlank()) {
-                            onLocationChange(lat, lon, tzText.trim())
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.apply_location))
-                }
-            }
-        }
-    }
-}

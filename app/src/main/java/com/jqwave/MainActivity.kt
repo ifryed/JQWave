@@ -13,6 +13,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -20,6 +23,7 @@ import com.jqwave.locale.AppLocaleStore
 import com.jqwave.location.LocationRefreshScheduler
 import com.jqwave.ui.EventListScreen
 import com.jqwave.ui.EventsViewModel
+import com.jqwave.ui.SettingsScreen
 import com.jqwave.ui.EventsViewModelFactory
 import com.jqwave.ui.theme.JQWaveTheme
 
@@ -55,6 +59,22 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                val refreshLocationFromDevice: () -> Unit = {
+                    val coarseGranted = ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (coarseGranted) {
+                        LocationRefreshScheduler.requestImmediateRefresh(this@MainActivity)
+                    } else {
+                        locationPermissionLauncher.launch(
+                            arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
+                        )
+                    }
+                }
+
+                var showSettings by remember { mutableStateOf(false) }
+
                 LaunchedEffect(Unit) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -70,24 +90,34 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                EventListScreen(
-                    rows = rows,
-                    location = location,
-                    onEnabledChange = vm::setEnabled,
-                    onRulesChange = vm::saveRules,
-                    onLocationChange = vm::updateLocation,
-                    onInIsraelChange = vm::setInIsrael,
-                    onTestEventNotification = vm::testEventNotification,
-                    onLanguageToggle = {
-                        val next = if (AppLocaleStore.getTag(this@MainActivity) == AppLocaleStore.LANG_IW) {
-                            AppLocaleStore.LANG_EN
-                        } else {
-                            AppLocaleStore.LANG_IW
-                        }
-                        AppLocaleStore.setTag(this@MainActivity, next)
-                        recreate()
-                    },
-                )
+                if (showSettings) {
+                    SettingsScreen(
+                        location = location,
+                        onBack = { showSettings = false },
+                        onUpdateLocationFromDevice = refreshLocationFromDevice,
+                        onCityChosen = { label, lat, lon, tz ->
+                            vm.updateLocation(lat, lon, tz, label)
+                        },
+                        onInIsraelChange = vm::setInIsrael,
+                    )
+                } else {
+                    EventListScreen(
+                        rows = rows,
+                        onEnabledChange = vm::setEnabled,
+                        onRulesChange = vm::saveRules,
+                        onTestEventNotification = vm::testEventNotification,
+                        onLanguageToggle = {
+                            val next = if (AppLocaleStore.getTag(this@MainActivity) == AppLocaleStore.LANG_IW) {
+                                AppLocaleStore.LANG_EN
+                            } else {
+                                AppLocaleStore.LANG_IW
+                            }
+                            AppLocaleStore.setTag(this@MainActivity, next)
+                            recreate()
+                        },
+                        onOpenSettings = { showSettings = true },
+                    )
+                }
             }
         }
     }

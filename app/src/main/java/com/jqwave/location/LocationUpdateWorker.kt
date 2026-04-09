@@ -10,6 +10,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.jqwave.JQWaveApplication
+import com.jqwave.R
 import kotlinx.coroutines.tasks.await
 import java.util.TimeZone
 
@@ -39,7 +40,9 @@ class LocationUpdateWorker(
         } ?: return Result.retry()
 
         val tz = TimeZone.getDefault().id
-        app.locationPreferences.update(loc.latitude, loc.longitude, tz)
+        val label = GeocodingHelper.reverseGeocodeLabel(ctx, loc.latitude, loc.longitude)
+            ?: ctx.getString(R.string.location_label_gps_fallback)
+        app.locationPreferences.update(loc.latitude, loc.longitude, tz, label)
         app.eventNotificationScheduler.rescheduleAll()
         return Result.success()
     }

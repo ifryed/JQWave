@@ -45,6 +45,7 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
                 LocationPreferences.DEFAULT_LON,
                 LocationPreferences.DEFAULT_TZ,
                 false,
+                "",
             ),
         )
 
@@ -77,9 +78,9 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun updateLocation(latitude: Double, longitude: Double, timeZoneId: String) {
+    fun updateLocation(latitude: Double, longitude: Double, timeZoneId: String, displayLabel: String) {
         viewModelScope.launch {
-            locationPreferences.update(latitude, longitude, timeZoneId)
+            locationPreferences.update(latitude, longitude, timeZoneId, displayLabel)
             scheduler.rescheduleAll()
         }
     }
