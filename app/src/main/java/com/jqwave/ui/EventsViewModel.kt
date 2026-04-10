@@ -8,13 +8,16 @@ import androidx.lifecycle.viewModelScope
 import com.jqwave.JQWaveApplication
 import com.jqwave.data.EventConfigEntity
 import com.jqwave.data.EventKind
+import com.jqwave.data.LiturgyPreferences
 import com.jqwave.data.LocationPreferences
+import com.jqwave.data.OmerNusach
 import com.jqwave.data.NotificationRule
 import com.jqwave.data.UserLocation
 import com.jqwave.data.toJson
 import com.jqwave.data.toNotificationRules
 import com.jqwave.notifications.NotificationHelper
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -31,6 +34,7 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
     private val dao = app.database.eventConfigDao()
     private val scheduler = app.eventNotificationScheduler
     private val locationPreferences = app.locationPreferences
+    private val liturgyPreferences: LiturgyPreferences = app.liturgyPreferences
 
     val eventRows = dao.observeAll()
         .map { entities -> entities.toUiStates() }
@@ -48,6 +52,9 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
                 "",
             ),
         )
+
+    val omerNusach = liturgyPreferences.omerNusachFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OmerNusach.ASHKENAZI)
 
     private fun List<EventConfigEntity>.toUiStates(): List<EventUiState> {
         val byKind = associateBy { it.kind }
@@ -92,10 +99,19 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun setOmerNusach(value: OmerNusach) {
+        viewModelScope.launch {
+            liturgyPreferences.setOmerNusach(value)
+        }
+    }
+
     fun testEventNotification(kind: EventKind) {
         val ctx = getApplication<Application>()
         NotificationHelper.ensureChannel(ctx)
-        NotificationHelper.showEventNotification(ctx, kind, location.value)
+        viewModelScope.launch {
+            val nusach = liturgyPreferences.omerNusachFlow.first()
+            NotificationHelper.showEventNotification(ctx, kind, location.value, nusach)
+        }
     }
 }
 

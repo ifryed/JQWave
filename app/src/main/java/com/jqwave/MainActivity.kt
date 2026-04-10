@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
                 )
                 val rows by vm.eventRows.collectAsStateWithLifecycle()
                 val location by vm.location.collectAsStateWithLifecycle()
+                val omerNusach by vm.omerNusach.collectAsStateWithLifecycle()
 
                 val notificationPermissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission(),
@@ -93,6 +94,8 @@ class MainActivity : ComponentActivity() {
                 if (showSettings) {
                     SettingsScreen(
                         location = location,
+                        omerNusach = omerNusach,
+                        onOmerNusachChange = vm::setOmerNusach,
                         onBack = { showSettings = false },
                         onUpdateLocationFromDevice = refreshLocationFromDevice,
                         onCityChosen = { label, lat, lon, tz ->

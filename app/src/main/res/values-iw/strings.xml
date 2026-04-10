@@ -10,7 +10,13 @@
     <string name="notify_title_shabbat_card">שבת</string>
     <string name="notify_body_rosh_hodesh">היום ראש חודש.</string>
     <string name="notify_body_omer">זמן לספור את העומר.</string>
-    <string name="notify_body_omer_day">היום יום %1$d לעומר.</string>
+    <string name="omer_bracha_standard_he">בָּרוּךְ אַתָּה יְיָ אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ עַל סְפִירַת הָעֹמֶר.</string>
+    <string name="omer_bracha_yemenite_he">בָּרוּךְ אַתָּה יְיָ אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ עַל מִצְוַת הָעֹמֶר.</string>
+    <string name="settings_omer_nusach_title">נוסח ברכת ספירת העומר</string>
+    <string name="settings_omer_nusach_ashkenazi">אשכנזי</string>
+    <string name="settings_omer_nusach_sepharadi">ספרדי</string>
+    <string name="settings_omer_nusach_yemenite">תימני</string>
+    <string name="settings_omer_nusach_hint">הברכה והספירה מוצגות בעברית. נוסח ספרדי מסיים לעיתים בעומר; אשכנז לעומר.</string>
     <string name="screen_title">הגל השקט היהודי</string>
     <string name="location_section">מיקום ולוח שנה</string>
     <string name="menu_more_options">אפשרויות נוספות</string>

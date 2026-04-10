@@ -4,6 +4,7 @@ package com.jqwave.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import android.location.Geocoder
 import com.jqwave.R
+import com.jqwave.data.OmerNusach
 import com.jqwave.data.UserLocation
 import com.jqwave.location.GeocodedCity
 import com.jqwave.location.GeocodingHelper
@@ -49,6 +53,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     location: UserLocation,
+    omerNusach: OmerNusach,
+    onOmerNusachChange: (OmerNusach) -> Unit,
     onBack: () -> Unit,
     onUpdateLocationFromDevice: () -> Unit,
     onCityChosen: (label: String, latitude: Double, longitude: Double, timeZoneId: String) -> Unit,
@@ -246,6 +252,77 @@ fun SettingsScreen(
                         checked = location.inIsrael,
                         onCheckedChange = onInIsraelChange,
                     )
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = scheme.surfaceContainerLow,
+                    contentColor = scheme.onSurface,
+                ),
+            ) {
+                Column(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.settings_omer_nusach_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = scheme.onSurface,
+                    )
+                    Text(
+                        stringResource(R.string.settings_omer_nusach_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
+                    )
+                    val chipColors = FilterChipDefaults.filterChipColors(
+                        containerColor = scheme.surface,
+                        labelColor = scheme.onSurface,
+                        selectedContainerColor = scheme.primaryContainer,
+                        selectedLabelColor = scheme.onPrimaryContainer,
+                    )
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        FilterChip(
+                            selected = omerNusach == OmerNusach.ASHKENAZI,
+                            onClick = { onOmerNusachChange(OmerNusach.ASHKENAZI) },
+                            label = {
+                                Text(
+                                    stringResource(R.string.settings_omer_nusach_ashkenazi),
+                                    maxLines = 1,
+                                )
+                            },
+                            colors = chipColors,
+                        )
+                        FilterChip(
+                            selected = omerNusach == OmerNusach.SEPHARADI,
+                            onClick = { onOmerNusachChange(OmerNusach.SEPHARADI) },
+                            label = {
+                                Text(
+                                    stringResource(R.string.settings_omer_nusach_sepharadi),
+                                    maxLines = 1,
+                                )
+                            },
+                            colors = chipColors,
+                        )
+                        FilterChip(
+                            selected = omerNusach == OmerNusach.YEMENITE,
+                            onClick = { onOmerNusachChange(OmerNusach.YEMENITE) },
+                            label = {
+                                Text(
+                                    stringResource(R.string.settings_omer_nusach_yemenite),
+                                    maxLines = 1,
+                                )
+                            },
+                            colors = chipColors,
+                        )
+                    }
                 }
             }
         }

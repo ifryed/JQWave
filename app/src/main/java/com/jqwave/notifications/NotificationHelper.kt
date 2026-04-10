@@ -11,19 +11,13 @@ import androidx.core.app.NotificationManagerCompat
 import com.jqwave.R
 import com.jqwave.data.EventKind
 import com.jqwave.data.NotificationRule
+import com.jqwave.data.OmerNusach
 import com.jqwave.data.ShabbatSegment
 import com.jqwave.data.UserLocation
-import com.jqwave.domain.JewishEventEvaluator
+import com.jqwave.domain.OmerLiturgy
 import com.jqwave.domain.ShabbatPreview
-import com.kosherjava.zmanim.ComplexZmanimCalendar
-import com.kosherjava.zmanim.util.GeoLocation
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Calendar
-import java.util.TimeZone
-
+import com.jqwave.domain.jewishCalendarAtTrigger
+import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 object NotificationHelper {
 
     const val CHANNEL_ID = "jewish_events"
@@ -39,8 +33,13 @@ object NotificationHelper {
         mgr.createNotificationChannel(channel)
     }
 
-    fun showEventNotification(context: Context, kind: EventKind, location: UserLocation) {
-        val (title, body) = notificationContent(context, kind, null, location)
+    fun showEventNotification(
+        context: Context,
+        kind: EventKind,
+        location: UserLocation,
+        omerNusach: OmerNusach,
+    ) {
+        val (title, body) = notificationContent(context, kind, null, location, omerNusach)
         showWithShare(
             context = context,
             title = title,
@@ -49,8 +48,14 @@ object NotificationHelper {
         )
     }
 
-    fun showForRule(context: Context, kind: EventKind, rule: NotificationRule, location: UserLocation) {
-        val (title, body) = notificationContent(context, kind, rule, location)
+    fun showForRule(
+        context: Context,
+        kind: EventKind,
+        rule: NotificationRule,
+        location: UserLocation,
+        omerNusach: OmerNusach,
+    ) {
+        val (title, body) = notificationContent(context, kind, rule, location, omerNusach)
         showWithShare(
             context = context,
             title = title,
@@ -64,6 +69,7 @@ object NotificationHelper {
         kind: EventKind,
         rule: NotificationRule?,
         location: UserLocation,
+        omerNusach: OmerNusach,
     ): Pair<String, String> {
         val title = when {
             kind == EventKind.SHABBAT && rule?.shabbatSegment == ShabbatSegment.END ->
@@ -73,11 +79,25 @@ object NotificationHelper {
             else -> context.getString(kind.notificationTitleRes)
         }
         val body = when (kind) {
-            EventKind.ROSH_HODESH -> context.getString(R.string.notify_body_rosh_hodesh)
-            EventKind.SFIRAT_HAOMER -> omerBody(context, location)
+            EventKind.ROSH_HODESH -> roshChodeshBody(context, location)
+            EventKind.SFIRAT_HAOMER -> omerBody(context, location, omerNusach)
             EventKind.SHABBAT -> shabbatBody(context, location)
         }
         return title to body
+    }
+
+    private fun isHebrewJewishDateFormatting(context: Context): Boolean {
+        val lang = context.resources.configuration.locales.get(0)?.language ?: return false
+        return lang == "iw" || lang == "he"
+    }
+
+    private fun roshChodeshBody(context: Context, location: UserLocation): String {
+        val jc = jewishCalendarAtTrigger(location, System.currentTimeMillis())
+        val formatter = HebrewDateFormatter().apply {
+            setHebrewFormat(isHebrewJewishDateFormatting(context))
+        }
+        val line = formatter.formatRoshChodesh(jc)
+        return line.ifBlank { context.getString(R.string.notify_body_rosh_hodesh) }
     }
 
     private fun shabbatBody(context: Context, location: UserLocation): String {
@@ -89,37 +109,11 @@ object NotificationHelper {
         }
     }
 
-    private fun omerBody(context: Context, location: UserLocation): String {
-        val zone = runCatching { ZoneId.of(location.timeZoneId) }.getOrNull() ?: ZoneId.systemDefault()
-        val today = LocalDate.now(zone)
+    private fun omerBody(context: Context, location: UserLocation, omerNusach: OmerNusach): String {
         val nowMillis = System.currentTimeMillis()
-        val geo = GeoLocation(
-            "user",
-            location.latitude,
-            location.longitude,
-            0.0,
-            TimeZone.getTimeZone(location.timeZoneId),
-        )
-        val zcal = ComplexZmanimCalendar(geo)
-        val cal = zcal.getCalendar()
-        cal.set(Calendar.YEAR, today.year)
-        cal.set(Calendar.MONTH, today.monthValue - 1)
-        cal.set(Calendar.DAY_OF_MONTH, today.dayOfMonth)
-        cal.set(Calendar.HOUR_OF_DAY, 12)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        val d = JewishEventEvaluator.dayOfOmerAtTrigger(
-            location.inIsrael,
-            today,
-            nowMillis,
-            zcal.sunset?.time,
-        )
-        return if (d >= 1) {
-            context.getString(R.string.notify_body_omer_day, d)
-        } else {
-            context.getString(R.string.notify_body_omer)
-        }
+        val jc = jewishCalendarAtTrigger(location, nowMillis)
+        val d = jc.getDayOfOmer()
+        return OmerLiturgy.notificationBody(context, d, omerNusach)
     }
 
     private fun showWithShare(context: Context, title: String, body: String, requestKey: String) {

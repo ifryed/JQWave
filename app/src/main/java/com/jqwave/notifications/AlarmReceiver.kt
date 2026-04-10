@@ -6,6 +6,7 @@ import android.content.Intent
 import com.jqwave.JQWaveApplication
 import com.jqwave.data.EventKind
 import com.jqwave.data.toNotificationRules
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
@@ -19,15 +20,16 @@ class AlarmReceiver : BroadcastReceiver() {
         app.applicationScope.launch {
             try {
                 val loc = app.locationPreferences.currentLocation()
+                val omerNusach = app.liturgyPreferences.omerNusachFlow.first()
                 val entity = app.database.eventConfigDao().getByKind(kind.storageKey)
                 val rule = entity?.let { e ->
                     runCatching { e.rulesJson.toNotificationRules() }.getOrNull()
                         ?.find { it.id == ruleId }
                 }
                 if (rule != null) {
-                    NotificationHelper.showForRule(context, kind, rule, loc)
+                    NotificationHelper.showForRule(context, kind, rule, loc, omerNusach)
                 } else {
-                    NotificationHelper.showEventNotification(context, kind, loc)
+                    NotificationHelper.showEventNotification(context, kind, loc, omerNusach)
                 }
                 app.eventNotificationScheduler.rescheduleAfterAlarm(kind, ruleId)
             } finally {

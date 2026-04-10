@@ -10,7 +10,13 @@
     <string name="notify_title_shabbat_card">Shabbat</string>
     <string name="notify_body_rosh_hodesh">Today is Rosh Chodesh.</string>
     <string name="notify_body_omer">Time to count the Omer.</string>
-    <string name="notify_body_omer_day">Today is day %1$d of the Omer.</string>
+    <string name="omer_bracha_standard_he">בָּרוּךְ אַתָּה יְיָ אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ עַל סְפִירַת הָעֹמֶר.</string>
+    <string name="omer_bracha_yemenite_he">בָּרוּךְ אַתָּה יְיָ אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ עַל מִצְוַת הָעֹמֶר.</string>
+    <string name="settings_omer_nusach_title">Sefirat HaOmer blessing (nusach)</string>
+    <string name="settings_omer_nusach_ashkenazi">Ashkenazi</string>
+    <string name="settings_omer_nusach_sepharadi">Sephardi / Sefaradi</string>
+    <string name="settings_omer_nusach_yemenite">Yemenite</string>
+    <string name="settings_omer_nusach_hint">Blessing and count are in Hebrew. Sephardi custom often ends the count with בעומר; Ashkenazi with לעומר.</string>
     <string name="screen_title">Jewish Quite Wave App</string>
     <string name="location_section">Location &amp; calendar</string>
     <string name="menu_more_options">More options</string>
