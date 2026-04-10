@@ -46,11 +46,8 @@
     <string name="share_text_attribution">\n\nFrom the JQWave app</string>
     <string name="notify_title_shabbat_start">Shabbat begins</string>
     <string name="notify_title_shabbat_end">Shabbat ends</string>
-    <string name="notify_shabbat_start">Shabbat starts at %1$s</string>
-    <string name="notify_shabbat_end">Shabbat ends at %1$s</string>
     <string name="notify_shabbat_generic">Shabbat times</string>
-    <string name="notify_shabbat_at">Shabbat: %1$s</string>
-    <string name="notify_shabbat_test_both">(Test) Shabbat starts ~%1$s · ends ~%2$s</string>
+    <string name="notify_shabbat_start_and_end">Shabbat starts ~%1$s · ends ~%2$s</string>
     <string name="anchor_tzait_chip">Nightfall</string>
     <string name="shabbat_segment_label">Reminder</string>
     <string name="shabbat_segment_start">Start (candles)</string>

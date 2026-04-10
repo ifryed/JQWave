@@ -15,10 +15,8 @@ import com.jqwave.data.ShabbatSegment
 import com.jqwave.data.UserLocation
 import com.jqwave.domain.JewishEventEvaluator
 import com.jqwave.domain.ShabbatPreview
-import com.jqwave.domain.sunset
 import com.kosherjava.zmanim.ComplexZmanimCalendar
 import com.kosherjava.zmanim.util.GeoLocation
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -77,35 +75,17 @@ object NotificationHelper {
         val body = when (kind) {
             EventKind.ROSH_HODESH -> context.getString(R.string.notify_body_rosh_hodesh)
             EventKind.SFIRAT_HAOMER -> omerBody(context, location)
-            EventKind.SHABBAT -> shabbatBody(context, rule, location)
+            EventKind.SHABBAT -> shabbatBody(context, location)
         }
         return title to body
     }
 
-    private fun shabbatBody(context: Context, rule: NotificationRule?, location: UserLocation): String {
-        val zone = runCatching { ZoneId.of(location.timeZoneId) }.getOrNull() ?: ZoneId.systemDefault()
-        val timeStr = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-            .withZone(zone)
-            .format(Instant.now())
-        return when (rule?.shabbatSegment) {
-            ShabbatSegment.START -> context.getString(R.string.notify_shabbat_start, timeStr)
-            ShabbatSegment.END -> context.getString(R.string.notify_shabbat_end, timeStr)
-            null -> {
-                if (rule == null) {
-                    val pair = ShabbatPreview.upcomingStartEndTimeLabels(location)
-                    if (pair != null) {
-                        context.getString(
-                            R.string.notify_shabbat_test_both,
-                            pair.first,
-                            pair.second,
-                        )
-                    } else {
-                        context.getString(R.string.notify_shabbat_generic)
-                    }
-                } else {
-                    context.getString(R.string.notify_shabbat_at, timeStr)
-                }
-            }
+    private fun shabbatBody(context: Context, location: UserLocation): String {
+        val pair = ShabbatPreview.upcomingStartEndTimeLabels(location)
+        return if (pair != null) {
+            context.getString(R.string.notify_shabbat_start_and_end, pair.first, pair.second)
+        } else {
+            context.getString(R.string.notify_shabbat_generic)
         }
     }
 

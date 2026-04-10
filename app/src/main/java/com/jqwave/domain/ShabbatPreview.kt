@@ -12,7 +12,7 @@ import java.time.format.FormatStyle
 import java.util.Calendar
 import java.util.TimeZone
 
-/** Formats upcoming candle / havdalah wall times for test notifications. */
+/** Candle lighting and havdalah wall times for the relevant Shabbat (same logic for test and scheduled alerts). */
 object ShabbatPreview {
 
     fun upcomingStartEndTimeLabels(location: UserLocation): Pair<String, String>? {
