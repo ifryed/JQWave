@@ -43,6 +43,7 @@
     <string name="button_test">בדיקה</string>
     <string name="notification_action_share">שיתוף</string>
     <string name="share_chooser_title">שתף דרך</string>
+    <string name="share_text_attribution">\n\nמהאפליקציה JQWave</string>
     <string name="notify_title_shabbat_start">כניסת שבת</string>
     <string name="notify_title_shabbat_end">יציאת שבת</string>
     <string name="notify_shabbat_start">כניסת שבת בשעה %1$s</string>

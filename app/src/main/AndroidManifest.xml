@@ -29,9 +29,11 @@
             android:name=".notifications.AlarmReceiver"
             android:exported="false" />
 
-        <receiver
-            android:name=".notifications.ShareNotificationReceiver"
-            android:exported="false" />
+        <activity
+            android:name=".notifications.ShareNotificationActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <receiver
             android:name=".notifications.BootReceiver"

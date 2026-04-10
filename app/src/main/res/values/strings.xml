@@ -43,6 +43,7 @@
     <string name="button_test">Test</string>
     <string name="notification_action_share">Share</string>
     <string name="share_chooser_title">Share via</string>
+    <string name="share_text_attribution">\n\nFrom the JQWave app</string>
     <string name="notify_title_shabbat_start">Shabbat begins</string>
     <string name="notify_title_shabbat_end">Shabbat ends</string>
     <string name="notify_shabbat_start">Shabbat starts at %1$s</string>

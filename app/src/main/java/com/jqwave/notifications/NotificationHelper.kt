@@ -143,12 +143,12 @@ object NotificationHelper {
     }
 
     private fun showWithShare(context: Context, title: String, body: String, requestKey: String) {
-        val shareText = "$title\n$body"
-        val sharePi = PendingIntent.getBroadcast(
+        val shareText = "$title\n$body${context.getString(R.string.share_text_attribution)}"
+        val sharePi = PendingIntent.getActivity(
             context,
             shareRequestCode(requestKey),
-            Intent(context, ShareNotificationReceiver::class.java).putExtra(
-                ShareNotificationReceiver.EXTRA_TEXT,
+            Intent(context, ShareNotificationActivity::class.java).putExtra(
+                ShareNotificationActivity.EXTRA_TEXT,
                 shareText,
             ),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
