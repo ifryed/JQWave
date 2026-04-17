@@ -40,11 +40,22 @@ object NextTriggerCalculator {
 
         var day = LocalDate.ofInstant(Instant.ofEpochMilli(fromMillis), zone)
         repeat(MAX_DAYS_AHEAD) {
-            val trigger = triggerOnGregorianDay(day, rule, zcal, jc, kind, zone)
+            val trigger = triggerOnGregorianDay(day, rule, zcal, jc, kind, zone, location)
             if (trigger != null && trigger > fromMillis) return trigger
             day = day.plusDays(1)
         }
         return null
+    }
+
+    private fun setZmanimCalendarToNoon(zcal: ComplexZmanimCalendar, day: LocalDate) {
+        val cal = zcal.getCalendar()
+        cal.set(Calendar.YEAR, day.year)
+        cal.set(Calendar.MONTH, day.monthValue - 1)
+        cal.set(Calendar.DAY_OF_MONTH, day.dayOfMonth)
+        cal.set(Calendar.HOUR_OF_DAY, 12)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
     }
 
     private fun triggerOnGregorianDay(
@@ -54,15 +65,9 @@ object NextTriggerCalculator {
         jc: JewishCalendar,
         kind: EventKind,
         zone: ZoneId,
+        location: UserLocation,
     ): Long? {
-        val cal = zcal.getCalendar()
-        cal.set(Calendar.YEAR, day.year)
-        cal.set(Calendar.MONTH, day.monthValue - 1)
-        cal.set(Calendar.DAY_OF_MONTH, day.dayOfMonth)
-        cal.set(Calendar.HOUR_OF_DAY, 12)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
+        setZmanimCalendarToNoon(zcal, day)
 
         val triggerMillis = when (rule.anchor) {
             TimeAnchor.CLOCK -> {
@@ -75,7 +80,10 @@ object NextTriggerCalculator {
                 base.time + rule.offsetMinutes * 60_000L
             }
             TimeAnchor.SUNSET -> {
-                val base = zcal.sunset ?: return null
+                // Hebrew day starts the prior evening; sunset anchor uses that boundary.
+                val base = zcal.sunset
+                setZmanimCalendarToNoon(zcal, day)
+                if (base == null) return null
                 base.time + rule.offsetMinutes * 60_000L
             }
             TimeAnchor.TZAIT -> {
@@ -84,7 +92,8 @@ object NextTriggerCalculator {
             }
         }
 
-        if (!eventAppliesAtTrigger(kind, rule, jc, day, triggerMillis, zcal, zone)) return null
+        setZmanimCalendarToNoon(zcal, day)
+        if (!eventAppliesAtTrigger(kind, rule, jc, day, triggerMillis, zcal, zone, location)) return null
         return triggerMillis
     }
 
@@ -96,6 +105,7 @@ object NextTriggerCalculator {
         triggerMillis: Long,
         zcal: ComplexZmanimCalendar,
         zone: ZoneId,
+        location: UserLocation,
     ): Boolean = when (kind) {
         EventKind.SFIRAT_HAOMER -> {
             JewishEventEvaluator.dayOfOmerAtTrigger(
@@ -106,8 +116,7 @@ object NextTriggerCalculator {
             ) >= 1
         }
         EventKind.ROSH_HODESH -> {
-            JewishEventEvaluator.setGregorianFromLocalDate(templateJc, day)
-            JewishEventEvaluator.applies(kind, templateJc)
+            jewishCalendarAtLocationMillis(location, triggerMillis, strictSunsetAfter = true).isRoshChodesh
         }
         EventKind.SHABBAT -> {
             val seg = rule.shabbatSegment ?: return false

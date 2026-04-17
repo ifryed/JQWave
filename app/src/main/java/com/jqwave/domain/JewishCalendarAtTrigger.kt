@@ -4,18 +4,25 @@ import com.jqwave.data.UserLocation
 import com.kosherjava.zmanim.ComplexZmanimCalendar
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import com.kosherjava.zmanim.util.GeoLocation
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Calendar
 import java.util.TimeZone
 
 /**
- * Hebrew calendar for “now” (or [triggerMillis]) in [location]: after local sunset the date rolls forward,
- * matching [JewishEventEvaluator.dayOfOmerAtTrigger].
+ * Hebrew calendar at [atMillis] in [location]: zmanim and initial Jewish date use the **local civil day** of
+ * [atMillis], then optionally roll the Jewish date after local sunset (same rule as Omer when [strictSunsetAfter] is
+ * false). When [strictSunsetAfter] is true, roll only if [atMillis] is **strictly after** sunset so the sunset instant
+ * still counts as the previous Hebrew day (needed for same-day Rosh Chodesh at sunset).
  */
-fun jewishCalendarAtTrigger(location: UserLocation, triggerMillis: Long): JewishCalendar {
+fun jewishCalendarAtLocationMillis(
+    location: UserLocation,
+    atMillis: Long,
+    strictSunsetAfter: Boolean = false,
+): JewishCalendar {
     val zone = runCatching { ZoneId.of(location.timeZoneId) }.getOrNull() ?: ZoneId.systemDefault()
-    val today = LocalDate.now(zone)
+    val anchorDay = LocalDate.ofInstant(Instant.ofEpochMilli(atMillis), zone)
     val geo = GeoLocation(
         "user",
         location.latitude,
@@ -25,20 +32,33 @@ fun jewishCalendarAtTrigger(location: UserLocation, triggerMillis: Long): Jewish
     )
     val zcal = ComplexZmanimCalendar(geo)
     val cal = zcal.getCalendar()
-    cal.set(Calendar.YEAR, today.year)
-    cal.set(Calendar.MONTH, today.monthValue - 1)
-    cal.set(Calendar.DAY_OF_MONTH, today.dayOfMonth)
+    cal.set(Calendar.YEAR, anchorDay.year)
+    cal.set(Calendar.MONTH, anchorDay.monthValue - 1)
+    cal.set(Calendar.DAY_OF_MONTH, anchorDay.dayOfMonth)
     cal.set(Calendar.HOUR_OF_DAY, 12)
     cal.set(Calendar.MINUTE, 0)
     cal.set(Calendar.SECOND, 0)
     cal.set(Calendar.MILLISECOND, 0)
     val jc = JewishCalendar().apply {
         setInIsrael(location.inIsrael)
-        JewishEventEvaluator.setGregorianFromLocalDate(this, today)
+        JewishEventEvaluator.setGregorianFromLocalDate(this, anchorDay)
     }
     val sunset = zcal.sunset?.time
-    if (sunset != null && triggerMillis >= sunset) {
+    val shouldForward = sunset != null &&
+        if (strictSunsetAfter) {
+            atMillis > sunset
+        } else {
+            atMillis >= sunset
+        }
+    if (shouldForward) {
         jc.forward(Calendar.DATE, 1)
     }
     return jc
 }
+
+/**
+ * Hebrew calendar for [triggerMillis] in [location]: after local sunset the date rolls forward at or after sunset,
+ * matching [JewishEventEvaluator.dayOfOmerAtTrigger].
+ */
+fun jewishCalendarAtTrigger(location: UserLocation, triggerMillis: Long): JewishCalendar =
+    jewishCalendarAtLocationMillis(location, triggerMillis, strictSunsetAfter = false)
