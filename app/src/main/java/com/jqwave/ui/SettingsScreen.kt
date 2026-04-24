@@ -46,6 +46,7 @@ import android.location.Geocoder
 import com.jqwave.R
 import com.jqwave.data.OmerNusach
 import com.jqwave.data.UserLocation
+import com.jqwave.data.notificationSoundTitle
 import com.jqwave.location.GeocodedCity
 import com.jqwave.location.GeocodingHelper
 import kotlinx.coroutines.launch
@@ -54,11 +55,15 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     location: UserLocation,
     omerNusach: OmerNusach,
+    defaultNotificationSoundStored: String?,
     onOmerNusachChange: (OmerNusach) -> Unit,
     onBack: () -> Unit,
     onUpdateLocationFromDevice: () -> Unit,
     onCityChosen: (label: String, latitude: Double, longitude: Double, timeZoneId: String) -> Unit,
     onInIsraelChange: (Boolean) -> Unit,
+    onPickDefaultNotificationSound: () -> Unit,
+    onPickDefaultNotificationAudioFile: () -> Unit,
+    onResetDefaultNotificationSound: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -252,6 +257,54 @@ fun SettingsScreen(
                         checked = location.inIsrael,
                         onCheckedChange = onInIsraelChange,
                     )
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = scheme.surfaceContainerLow,
+                    contentColor = scheme.onSurface,
+                ),
+            ) {
+                Column(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.settings_notification_sound_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = scheme.onSurface,
+                    )
+                    Text(
+                        notificationSoundTitle(context, defaultNotificationSoundStored),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = scheme.onSurface,
+                    )
+                    Text(
+                        stringResource(R.string.settings_notification_sound_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                    ) {
+                        TextButton(onClick = onPickDefaultNotificationSound) {
+                            Text(stringResource(R.string.settings_notification_sound_choose))
+                        }
+                        TextButton(onClick = onPickDefaultNotificationAudioFile) {
+                            Text(stringResource(R.string.settings_notification_sound_browse_files))
+                        }
+                        if (defaultNotificationSoundStored != null) {
+                            TextButton(onClick = onResetDefaultNotificationSound) {
+                                Text(stringResource(R.string.settings_notification_sound_reset_system))
+                            }
+                        }
+                    }
                 }
             }
 

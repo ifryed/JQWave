@@ -7,12 +7,12 @@ import com.jqwave.data.EventConfigEntity
 import com.jqwave.data.EventKind
 import com.jqwave.data.LiturgyPreferences
 import com.jqwave.data.LocationPreferences
+import com.jqwave.data.NotificationPreferences
 import com.jqwave.data.NotificationRule
 import com.jqwave.data.ScheduledAlarmsStore
 import com.jqwave.data.toJson
 import com.jqwave.location.LocationRefreshScheduler
 import com.jqwave.notifications.EventNotificationScheduler
-import com.jqwave.notifications.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -26,6 +26,8 @@ class JQWaveApplication : Application() {
         private set
     lateinit var liturgyPreferences: LiturgyPreferences
         private set
+    lateinit var notificationPreferences: NotificationPreferences
+        private set
     lateinit var eventNotificationScheduler: EventNotificationScheduler
         private set
 
@@ -36,6 +38,7 @@ class JQWaveApplication : Application() {
         database = AppDatabase.build(this)
         locationPreferences = LocationPreferences(this)
         liturgyPreferences = LiturgyPreferences(this)
+        notificationPreferences = NotificationPreferences(this)
         val scheduledStore = ScheduledAlarmsStore(this)
         eventNotificationScheduler = EventNotificationScheduler(
             this,
@@ -43,7 +46,6 @@ class JQWaveApplication : Application() {
             locationPreferences,
             scheduledStore,
         )
-        NotificationHelper.ensureChannel(this)
         LocationRefreshScheduler.schedulePeriodic(this)
         applicationScope.launch {
             seedIfEmpty()

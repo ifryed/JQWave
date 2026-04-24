@@ -26,10 +26,24 @@ class AlarmReceiver : BroadcastReceiver() {
                     runCatching { e.rulesJson.toNotificationRules() }.getOrNull()
                         ?.find { it.id == ruleId }
                 }
+                val defaultSound = app.notificationPreferences.defaultSoundStoredFlow.first()
                 if (rule != null) {
-                    NotificationHelper.showForRule(context, kind, rule, loc, omerNusach)
+                    NotificationHelper.showForRule(
+                        context,
+                        kind,
+                        rule,
+                        loc,
+                        omerNusach,
+                        defaultSound,
+                    )
                 } else {
-                    NotificationHelper.showEventNotification(context, kind, loc, omerNusach)
+                    NotificationHelper.showEventNotification(
+                        context,
+                        kind,
+                        loc,
+                        omerNusach,
+                        defaultSound,
+                    )
                 }
                 app.eventNotificationScheduler.rescheduleAfterAlarm(kind, ruleId)
             } finally {

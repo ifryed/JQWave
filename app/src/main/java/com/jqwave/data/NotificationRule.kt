@@ -14,4 +14,10 @@ data class NotificationRule(
     val offsetMinutes: Int = 0,
     /** For Shabbat alerts: candle lighting (START) vs havdalah (END). */
     val shabbatSegment: ShabbatSegment? = null,
+    /** When true, use app-wide default from [NotificationPreferences]. */
+    val useAppNotificationSound: Boolean = true,
+    /**
+     * When [useAppNotificationSound] is false: ringtone URI string, or [NOTIFICATION_SOUND_SILENT], or empty for silent.
+     */
+    val notificationSoundUri: String? = null,
 )

@@ -58,4 +58,17 @@
     <string name="shabbat_segment_label">תזכורת</string>
     <string name="shabbat_segment_start">כניסה (נרות)</string>
     <string name="shabbat_segment_end">יציאה (הבדלה)</string>
+    <string name="settings_notification_sound_title">צליל התראות ברירת מחדל</string>
+    <string name="settings_notification_sound_hint">משמש לתזכורות, אלא אם לכלל הוגדר צליל משלו.</string>
+    <string name="settings_notification_sound_choose">בחירת צליל</string>
+    <string name="settings_notification_sound_browse_files">חיפוש בקבצים</string>
+    <string name="settings_notification_sound_reset_system">ברירת מחדל של המערכת</string>
+    <string name="rule_notification_sound_label">צליל</string>
+    <string name="rule_notification_sound_app_default">ברירת האפליקציה</string>
+    <string name="rule_notification_sound_custom">מותאם</string>
+    <string name="rule_notification_sound_choose">בחירת צליל</string>
+    <string name="rule_notification_sound_browse_files">חיפוש בקבצים</string>
+    <string name="notification_sound_silent">ללא צליל</string>
+    <string name="notification_sound_system_default">ברירת המחדל של המערכת</string>
+    <string name="notification_sound_custom">צליל מותאם</string>
 </resources>

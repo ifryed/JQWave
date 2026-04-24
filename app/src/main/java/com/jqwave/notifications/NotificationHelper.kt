@@ -5,7 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
+import android.net.Uri
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.jqwave.R
@@ -14,30 +14,41 @@ import com.jqwave.data.NotificationRule
 import com.jqwave.data.OmerNusach
 import com.jqwave.data.ShabbatSegment
 import com.jqwave.data.UserLocation
+import com.jqwave.data.effectiveNotificationChannelUri
+import com.jqwave.data.notificationChannelAudioAttributes
+import com.jqwave.data.notificationChannelFingerprint
+import com.jqwave.data.notificationChannelIdForFingerprint
 import com.jqwave.domain.OmerLiturgy
 import com.jqwave.domain.ShabbatPreview
 import com.jqwave.domain.jewishCalendarAtTrigger
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
+
 object NotificationHelper {
 
-    const val CHANNEL_ID = "jewish_events"
-
-    fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+    fun ensureChannelForSound(context: Context, channelId: String, soundUri: Uri?) {
         val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(
-            CHANNEL_ID,
+            channelId,
             context.getString(R.string.notification_channel_name),
             NotificationManager.IMPORTANCE_DEFAULT,
-        )
+        ).apply {
+            setSound(soundUri, notificationChannelAudioAttributes())
+            enableVibration(soundUri != null)
+        }
         mgr.createNotificationChannel(channel)
     }
 
+    /**
+     * @param soundRule If non-null, notification channel sound matches this rule (same as scheduled
+     * alerts). Preview title/body stay generic (no rule-specific copy).
+     */
     fun showEventNotification(
         context: Context,
         kind: EventKind,
         location: UserLocation,
         omerNusach: OmerNusach,
+        defaultSoundStored: String?,
+        soundRule: NotificationRule? = null,
     ) {
         val (title, body) = notificationContent(context, kind, null, location, omerNusach)
         showWithShare(
@@ -45,6 +56,8 @@ object NotificationHelper {
             title = title,
             body = body,
             requestKey = "${kind.storageKey}|test|${System.currentTimeMillis()}",
+            defaultSoundStored = defaultSoundStored,
+            rule = soundRule,
         )
     }
 
@@ -54,6 +67,7 @@ object NotificationHelper {
         rule: NotificationRule,
         location: UserLocation,
         omerNusach: OmerNusach,
+        defaultSoundStored: String?,
     ) {
         val (title, body) = notificationContent(context, kind, rule, location, omerNusach)
         showWithShare(
@@ -61,6 +75,8 @@ object NotificationHelper {
             title = title,
             body = body,
             requestKey = "${kind.storageKey}|${rule.id}|${System.currentTimeMillis()}",
+            defaultSoundStored = defaultSoundStored,
+            rule = rule,
         )
     }
 
@@ -116,7 +132,19 @@ object NotificationHelper {
         return OmerLiturgy.notificationBody(context, d, omerNusach)
     }
 
-    private fun showWithShare(context: Context, title: String, body: String, requestKey: String) {
+    private fun showWithShare(
+        context: Context,
+        title: String,
+        body: String,
+        requestKey: String,
+        defaultSoundStored: String?,
+        rule: NotificationRule?,
+    ) {
+        val soundUri = effectiveNotificationChannelUri(context, defaultSoundStored, rule)
+        val channelId = notificationChannelIdForFingerprint(
+            notificationChannelFingerprint(defaultSoundStored, rule),
+        )
+        ensureChannelForSound(context, channelId, soundUri)
         val shareText = "$title\n$body${context.getString(R.string.share_text_attribution)}"
         val sharePi = PendingIntent.getActivity(
             context,
@@ -127,7 +155,7 @@ object NotificationHelper {
             ),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)

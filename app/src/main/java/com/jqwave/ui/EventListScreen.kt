@@ -46,11 +46,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import android.net.Uri
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -59,6 +61,8 @@ import com.jqwave.data.EventKind
 import com.jqwave.data.NotificationRule
 import com.jqwave.data.ShabbatSegment
 import com.jqwave.data.TimeAnchor
+import com.jqwave.data.effectiveNotificationChannelUri
+import com.jqwave.data.notificationSoundTitle
 
 private val EventCardLightGreen = Color(0xFFF2FAF6)
 
@@ -102,11 +106,15 @@ private fun languageToggleLabel(): String {
 @Composable
 fun EventListScreen(
     rows: List<EventUiState>,
+    defaultNotificationSoundStored: String?,
     onEnabledChange: (EventKind, Boolean) -> Unit,
     onRulesChange: (EventKind, List<NotificationRule>) -> Unit,
-    onTestEventNotification: (EventKind) -> Unit,
+    onTestEventNotification: (EventKind, NotificationRule?) -> Unit,
     onLanguageToggle: () -> Unit,
     onOpenSettings: () -> Unit,
+    onSetRuleUseAppNotificationSound: (EventKind, NotificationRule, Boolean) -> Unit,
+    onPickRuleNotificationSound: (EventKind, String, Uri?) -> Unit,
+    onPickRuleNotificationAudioFile: (EventKind, String) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val langLabel = languageToggleLabel()
@@ -178,9 +186,21 @@ fun EventListScreen(
             rows.forEach { row ->
                 EventCard(
                     row = row,
+                    defaultNotificationSoundStored = defaultNotificationSoundStored,
                     onEnabledChange = { onEnabledChange(row.kind, it) },
                     onRulesChange = { onRulesChange(row.kind, it) },
-                    onTestNotification = { onTestEventNotification(row.kind) },
+                    onTestNotification = {
+                        onTestEventNotification(row.kind, row.rules.firstOrNull())
+                    },
+                    onSetRuleUseAppNotificationSound = { rule, useApp ->
+                        onSetRuleUseAppNotificationSound(row.kind, rule, useApp)
+                    },
+                    onPickRuleNotificationSound = { ruleId, existing ->
+                        onPickRuleNotificationSound(row.kind, ruleId, existing)
+                    },
+                    onPickRuleNotificationAudioFile = { ruleId ->
+                        onPickRuleNotificationAudioFile(row.kind, ruleId)
+                    },
                 )
             }
         }
@@ -190,9 +210,13 @@ fun EventListScreen(
 @Composable
 private fun EventCard(
     row: EventUiState,
+    defaultNotificationSoundStored: String?,
     onEnabledChange: (Boolean) -> Unit,
     onRulesChange: (List<NotificationRule>) -> Unit,
     onTestNotification: () -> Unit,
+    onSetRuleUseAppNotificationSound: (NotificationRule, Boolean) -> Unit,
+    onPickRuleNotificationSound: (String, Uri?) -> Unit,
+    onPickRuleNotificationAudioFile: (String) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     var expanded by remember(row.kind) { mutableStateOf(false) }
@@ -261,10 +285,14 @@ private fun EventCard(
                     RuleRow(
                         eventKind = row.kind,
                         rule = rule,
+                        defaultNotificationSoundStored = defaultNotificationSoundStored,
                         showRemove = row.rules.size > 1,
                         onRuleChange = { updated ->
                             onRulesChange(row.rules.map { if (it.id == updated.id) updated else it })
                         },
+                        onSetRuleUseAppNotificationSound = onSetRuleUseAppNotificationSound,
+                        onPickRuleNotificationSound = onPickRuleNotificationSound,
+                        onPickRuleNotificationAudioFile = onPickRuleNotificationAudioFile,
                         onRemove = {
                             onRulesChange(row.rules.filter { it.id != rule.id })
                         },
@@ -317,10 +345,15 @@ private fun EventCard(
 private fun RuleRow(
     eventKind: EventKind,
     rule: NotificationRule,
+    defaultNotificationSoundStored: String?,
     showRemove: Boolean,
     onRuleChange: (NotificationRule) -> Unit,
+    onSetRuleUseAppNotificationSound: (NotificationRule, Boolean) -> Unit,
+    onPickRuleNotificationSound: (String, Uri?) -> Unit,
+    onPickRuleNotificationAudioFile: (String) -> Unit,
     onRemove: () -> Unit,
 ) {
+    val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val latestRule by rememberUpdatedState(rule)
     val anchorChipColors = FilterChipDefaults.filterChipColors(
@@ -458,6 +491,73 @@ private fun RuleRow(
                             contentDescription = null,
                             tint = scheme.onSurface,
                         )
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.rule_notification_sound_label),
+                style = MaterialTheme.typography.labelMedium,
+                color = scheme.onSurface,
+            )
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                FilterChip(
+                    selected = rule.useAppNotificationSound,
+                    onClick = { onSetRuleUseAppNotificationSound(rule, true) },
+                    label = {
+                        Text(
+                            stringResource(R.string.rule_notification_sound_app_default),
+                            maxLines = 1,
+                        )
+                    },
+                    colors = anchorChipColors,
+                )
+                FilterChip(
+                    selected = !rule.useAppNotificationSound,
+                    onClick = { onSetRuleUseAppNotificationSound(rule, false) },
+                    label = {
+                        Text(
+                            stringResource(R.string.rule_notification_sound_custom),
+                            maxLines = 1,
+                        )
+                    },
+                    colors = anchorChipColors,
+                )
+            }
+            if (!rule.useAppNotificationSound) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    notificationSoundTitle(
+                        context,
+                        rule.notificationSoundUri,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                )
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    TextButton(
+                        onClick = {
+                            val existing = effectiveNotificationChannelUri(
+                                context,
+                                defaultNotificationSoundStored,
+                                rule,
+                            )
+                            onPickRuleNotificationSound(rule.id, existing)
+                        },
+                    ) {
+                        Text(stringResource(R.string.rule_notification_sound_choose))
+                    }
+                    TextButton(onClick = { onPickRuleNotificationAudioFile(rule.id) }) {
+                        Text(stringResource(R.string.rule_notification_sound_browse_files))
                     }
                 }
             }

@@ -58,4 +58,17 @@
     <string name="shabbat_segment_label">Reminder</string>
     <string name="shabbat_segment_start">Start (candles)</string>
     <string name="shabbat_segment_end">End (havdalah)</string>
+    <string name="settings_notification_sound_title">Default notification sound</string>
+    <string name="settings_notification_sound_hint">Used for reminders unless a rule uses its own sound.</string>
+    <string name="settings_notification_sound_choose">Choose sound</string>
+    <string name="settings_notification_sound_browse_files">Browse files</string>
+    <string name="settings_notification_sound_reset_system">Use system default</string>
+    <string name="rule_notification_sound_label">Sound</string>
+    <string name="rule_notification_sound_app_default">App default</string>
+    <string name="rule_notification_sound_custom">Custom</string>
+    <string name="rule_notification_sound_choose">Choose sound</string>
+    <string name="rule_notification_sound_browse_files">Browse files</string>
+    <string name="notification_sound_silent">Silent</string>
+    <string name="notification_sound_system_default">System default</string>
+    <string name="notification_sound_custom">Custom sound</string>
 </resources>

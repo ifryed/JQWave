@@ -10,6 +10,9 @@ import com.jqwave.data.EventConfigEntity
 import com.jqwave.data.EventKind
 import com.jqwave.data.LiturgyPreferences
 import com.jqwave.data.LocationPreferences
+import com.jqwave.data.NOTIFICATION_SOUND_SILENT
+import com.jqwave.data.NotificationPreferences
+import com.jqwave.data.effectiveNotificationChannelUri
 import com.jqwave.data.OmerNusach
 import com.jqwave.data.NotificationRule
 import com.jqwave.data.UserLocation
@@ -35,6 +38,7 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
     private val scheduler = app.eventNotificationScheduler
     private val locationPreferences = app.locationPreferences
     private val liturgyPreferences: LiturgyPreferences = app.liturgyPreferences
+    private val notificationPreferences: NotificationPreferences = app.notificationPreferences
 
     val eventRows = dao.observeAll()
         .map { entities -> entities.toUiStates() }
@@ -55,6 +59,9 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
 
     val omerNusach = liturgyPreferences.omerNusachFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OmerNusach.ASHKENAZI)
+
+    val defaultNotificationSoundStored = notificationPreferences.defaultSoundStoredFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null as String?)
 
     private fun List<EventConfigEntity>.toUiStates(): List<EventUiState> {
         val byKind = associateBy { it.kind }
@@ -105,12 +112,70 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun testEventNotification(kind: EventKind) {
+    fun setDefaultNotificationSoundStored(value: String?) {
+        viewModelScope.launch {
+            notificationPreferences.setDefaultSoundStored(value)
+        }
+    }
+
+    fun setRuleUseAppNotificationSound(kind: EventKind, rule: NotificationRule, useApp: Boolean) {
+        viewModelScope.launch {
+            val e = dao.getByKind(kind.storageKey) ?: return@launch
+            val rules = runCatching { e.rulesJson.toNotificationRules() }.getOrElse { return@launch }
+            val updated = rules.map { r ->
+                if (r.id != rule.id) {
+                    r
+                } else if (useApp) {
+                    r.copy(useAppNotificationSound = true, notificationSoundUri = null)
+                } else {
+                    val ctx = getApplication<Application>()
+                    val default = notificationPreferences.defaultSoundStoredFlow.first()
+                    val uri = effectiveNotificationChannelUri(ctx, default, null)
+                    val snapshot = if (uri == null) {
+                        NOTIFICATION_SOUND_SILENT
+                    } else {
+                        uri.toString()
+                    }
+                    r.copy(useAppNotificationSound = false, notificationSoundUri = snapshot)
+                }
+            }
+            dao.upsert(e.copy(rulesJson = updated.toJson()))
+            scheduler.rescheduleAll()
+        }
+    }
+
+    fun patchRuleNotificationSoundOverride(kind: EventKind, ruleId: String, overrideUriString: String?) {
+        viewModelScope.launch {
+            val e = dao.getByKind(kind.storageKey) ?: return@launch
+            val rules = runCatching { e.rulesJson.toNotificationRules() }.getOrElse { return@launch }
+            val updated = rules.map { r ->
+                if (r.id != ruleId) {
+                    r
+                } else {
+                    r.copy(
+                        useAppNotificationSound = false,
+                        notificationSoundUri = overrideUriString,
+                    )
+                }
+            }
+            dao.upsert(e.copy(rulesJson = updated.toJson()))
+            scheduler.rescheduleAll()
+        }
+    }
+
+    fun testEventNotification(kind: EventKind, soundRule: NotificationRule?) {
         val ctx = getApplication<Application>()
-        NotificationHelper.ensureChannel(ctx)
         viewModelScope.launch {
             val nusach = liturgyPreferences.omerNusachFlow.first()
-            NotificationHelper.showEventNotification(ctx, kind, location.value, nusach)
+            val defaultSound = notificationPreferences.defaultSoundStoredFlow.first()
+            NotificationHelper.showEventNotification(
+                ctx,
+                kind,
+                location.value,
+                nusach,
+                defaultSound,
+                soundRule = soundRule,
+            )
         }
     }
 }
