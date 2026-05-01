@@ -169,6 +169,7 @@ class MainActivity : ComponentActivity() {
                 } else {
                     EventListScreen(
                         rows = rows,
+                        userLocation = location,
                         defaultNotificationSoundStored = defaultNotificationSoundStored,
                         onEnabledChange = vm::setEnabled,
                         onRulesChange = vm::saveRules,

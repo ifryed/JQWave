@@ -71,4 +71,6 @@
     <string name="notification_sound_silent">ללא צליל</string>
     <string name="notification_sound_system_default">ברירת המחדל של המערכת</string>
     <string name="notification_sound_custom">צליל מותאם</string>
+    <string name="toast_next_notification_at">התראת %1$s הבאה תהיה ב־%2$s.</string>
+    <string name="toast_event_label_sfirat_haomer">ספירת העומר</string>
 </resources>

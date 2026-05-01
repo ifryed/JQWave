@@ -71,4 +71,6 @@
     <string name="notification_sound_silent">Silent</string>
     <string name="notification_sound_system_default">System default</string>
     <string name="notification_sound_custom">Custom sound</string>
+    <string name="toast_next_notification_at">The next %1$s notification will be at %2$s.</string>
+    <string name="toast_event_label_sfirat_haomer">Lag Ba\u2019Omer</string>
 </resources>

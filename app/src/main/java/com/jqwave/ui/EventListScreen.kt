@@ -2,6 +2,8 @@
 
 package com.jqwave.ui
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,15 +59,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.os.ConfigurationCompat
 import com.jqwave.R
 import com.jqwave.data.EventKind
 import com.jqwave.data.NotificationRule
 import com.jqwave.data.ShabbatSegment
 import com.jqwave.data.TimeAnchor
+import com.jqwave.data.UserLocation
 import com.jqwave.data.effectiveNotificationChannelUri
 import com.jqwave.data.notificationSoundTitle
+import com.jqwave.domain.NextTriggerCalculator
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
+import kotlinx.coroutines.delay
 
 private val EventCardLightGreen = Color(0xFFF2FAF6)
+
+private fun formatNextNotificationTime(context: Context, epochMillis: Long, zoneId: String): String {
+    val zone = runCatching { ZoneId.of(zoneId) }.getOrElse { ZoneId.systemDefault() }
+    val locale = ConfigurationCompat.getLocales(context.resources.configuration)[0]
+        ?: Locale.getDefault()
+    val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+        .withLocale(locale)
+    return formatter.format(Instant.ofEpochMilli(epochMillis).atZone(zone))
+}
 
 @Composable
 private fun EventKindCardIcon(
@@ -106,6 +127,7 @@ private fun languageToggleLabel(): String {
 @Composable
 fun EventListScreen(
     rows: List<EventUiState>,
+    userLocation: UserLocation,
     defaultNotificationSoundStored: String?,
     onEnabledChange: (EventKind, Boolean) -> Unit,
     onRulesChange: (EventKind, List<NotificationRule>) -> Unit,
@@ -186,6 +208,7 @@ fun EventListScreen(
             rows.forEach { row ->
                 EventCard(
                     row = row,
+                    userLocation = userLocation,
                     defaultNotificationSoundStored = defaultNotificationSoundStored,
                     onEnabledChange = { onEnabledChange(row.kind, it) },
                     onRulesChange = { onRulesChange(row.kind, it) },
@@ -210,6 +233,7 @@ fun EventListScreen(
 @Composable
 private fun EventCard(
     row: EventUiState,
+    userLocation: UserLocation,
     defaultNotificationSoundStored: String?,
     onEnabledChange: (Boolean) -> Unit,
     onRulesChange: (List<NotificationRule>) -> Unit,
@@ -285,6 +309,7 @@ private fun EventCard(
                     RuleRow(
                         eventKind = row.kind,
                         rule = rule,
+                        userLocation = userLocation,
                         defaultNotificationSoundStored = defaultNotificationSoundStored,
                         showRemove = row.rules.size > 1,
                         onRuleChange = { updated ->
@@ -345,6 +370,7 @@ private fun EventCard(
 private fun RuleRow(
     eventKind: EventKind,
     rule: NotificationRule,
+    userLocation: UserLocation,
     defaultNotificationSoundStored: String?,
     showRemove: Boolean,
     onRuleChange: (NotificationRule) -> Unit,
@@ -356,13 +382,44 @@ private fun RuleRow(
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val latestRule by rememberUpdatedState(rule)
+    val latestLocation by rememberUpdatedState(userLocation)
+    var skipInitialNextNotificationToast by remember(rule.id) { mutableStateOf(true) }
+    val segment = rule.shabbatSegment ?: ShabbatSegment.START
+    LaunchedEffect(
+        rule.id,
+        rule.anchor,
+        rule.hour,
+        rule.minute,
+        rule.offsetMinutes,
+        segment,
+        userLocation.latitude,
+        userLocation.longitude,
+        userLocation.timeZoneId,
+        userLocation.inIsrael,
+    ) {
+        if (skipInitialNextNotificationToast) {
+            skipInitialNextNotificationToast = false
+            return@LaunchedEffect
+        }
+        delay(3_000)
+        val r = latestRule
+        val loc = latestLocation
+        val nextMillis = NextTriggerCalculator.nextTriggerMillis(eventKind, r, loc) ?: return@LaunchedEffect
+        val eventLabelRes = when (eventKind) {
+            EventKind.SFIRAT_HAOMER -> R.string.toast_event_label_sfirat_haomer
+            else -> eventKind.displayNameRes
+        }
+        val eventLabel = context.getString(eventLabelRes)
+        val formatted = formatNextNotificationTime(context, nextMillis, loc.timeZoneId)
+        val msg = context.getString(R.string.toast_next_notification_at, eventLabel, formatted)
+        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+    }
     val anchorChipColors = FilterChipDefaults.filterChipColors(
         containerColor = scheme.surface,
         labelColor = scheme.onSurface,
         selectedContainerColor = scheme.primaryContainer,
         selectedLabelColor = scheme.onPrimaryContainer,
     )
-    val segment = rule.shabbatSegment ?: ShabbatSegment.START
     fun applySegment(newSeg: ShabbatSegment) {
         var r = rule.copy(shabbatSegment = newSeg)
         when (newSeg) {
